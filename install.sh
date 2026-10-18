@@ -10,7 +10,7 @@ release=/etc/os-release
 
 usage() {
     printf '%s\n' \
-        'Uso: sh install.sh [--modules fish,rotate,audio,brightness] [--dry-run] [--yes] [--tools-dir RUTA]' \
+        'Uso: sh install.sh [--modules fish,rotate,audio,brightness,wifi,bluetooth] [--dry-run] [--yes] [--tools-dir RUTA]' \
         'Fish es obligatorio; los módulos opcionales se delegan a linux-tools.' \
         'No instala ni configura doas. Acepta doas/sudo/su ya disponibles.'
 }
@@ -56,7 +56,7 @@ if [ -z "$modules" ]; then
     modules=fish,rotate,audio,brightness
     if [ -t 0 ] && [ "$assume_yes" -eq 0 ] && [ "$dry_run" -eq 0 ]; then
         echo 'Seleccioná los módulos (separados por coma):'
-        echo 'fish [obligatorio], rotate [pantalla táctil X11], audio, brightness [X11]'
+        echo 'fish [obligatorio], rotate [pantalla táctil X11], audio, brightness [X11], wifi, bluetooth'
         printf 'Módulos [fish,rotate,audio,brightness]: '
         IFS= read -r reply || reply=''
         if [ -n "$reply" ]; then modules=$reply; fi
@@ -66,6 +66,8 @@ requested=$modules
 want_rotate=0
 want_audio=0
 want_brightness=0
+want_wifi=0
+want_bluetooth=0
 while [ -n "$requested" ]; do
     case "$requested" in
         *,*) item=${requested%%,*}; requested=${requested#*,} ;;
@@ -76,6 +78,8 @@ while [ -n "$requested" ]; do
         rotate) want_rotate=1 ;;
         audio) want_audio=1 ;;
         brightness) want_brightness=1 ;;
+        wifi) want_wifi=1 ;;
+        bluetooth) want_bluetooth=1 ;;
         *) echo "Módulo no disponible: $item" >&2; exit 2 ;;
     esac
 done
@@ -84,6 +88,8 @@ selected=fish
 [ "$want_rotate" -eq 0 ] || selected="$selected,rotate"
 [ "$want_audio" -eq 0 ] || selected="$selected,audio"
 [ "$want_brightness" -eq 0 ] || selected="$selected,brightness"
+[ "$want_wifi" -eq 0 ] || selected="$selected,wifi"
+[ "$want_bluetooth" -eq 0 ] || selected="$selected,bluetooth"
 
 packages='fish git'
 if [ "$ID" = alpine ]; then
@@ -97,7 +103,7 @@ echo "Sistema: $distro"
 echo "Módulos: $selected"
 echo "Paquetes base: $packages"
 echo "Código de herramientas: $tools_dir"
-echo 'Audio/firmware/mixer serán configurados por linux-tools, no duplicados.'
+echo 'Audio, Wi-Fi y Bluetooth se delegan a linux-tools; no se sustituyen redes activas.'
 
 if [ "$dry_run" -eq 1 ]; then
     echo 'Simulación: no se instalaron paquetes, no se clonó nada y no se modificaron archivos.'
