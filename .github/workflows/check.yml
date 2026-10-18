@@ -1,0 +1,10 @@
+name: Bootstrap checks
+on:
+  push:
+  pull_request:
+jobs:
+  sh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sh tests/check.sh
