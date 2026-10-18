@@ -4,6 +4,8 @@ Instalador de arranque para **Alpine Linux y Debian/Ubuntu**, con **Fish obligat
 
 ## Primer arranque
 
+Desde una Alpine **recién instalada**, necesitás `git` para poder clonar el instalador. Si todavía no existe, ejecutá como root `su -`, luego `apk add git` y finalmente `exit`. El instalador instalará Fish y el resto, sin necesidad de root permanente.
+
 Cloná este repositorio como usuario común:
 
 ```sh
