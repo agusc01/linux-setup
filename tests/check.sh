@@ -16,6 +16,8 @@ grep -Fq 'xrandr xinput' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules wifi,bluetooth --dry-run > "$tmp/result"
 grep -Fxq 'Módulos: fish,wifi,bluetooth' "$tmp/result"
 grep -Fq 'Paquetes base: fish git' "$tmp/result"
+LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules rofi --dry-run > "$tmp/result"
+grep -Fxq 'Módulos: fish,rofi' "$tmp/result"
 
 printf 'ID=debian\nVERSION_ID=13\n' > "$tmp/os-release"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules brightness --dry-run > "$tmp/result"
@@ -23,9 +25,11 @@ grep -Fq 'Sistema: Debian/Ubuntu' "$tmp/result"
 grep -Fq 'Paquetes base: fish git x11-xserver-utils' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules wifi,bluetooth --dry-run > "$tmp/result"
 grep -Fxq 'Módulos: fish,wifi,bluetooth' "$tmp/result"
+LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules rofi --dry-run > "$tmp/result"
+grep -Fxq 'Módulos: fish,rofi' "$tmp/result"
 
 if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules noexiste --dry-run >/dev/null 2>&1; then
     echo 'FALLO: se aceptó un módulo desconocido.' >&2
     exit 1
 fi
-echo 'OK: Alpine/Debian, Fish obligatorio, Wi-Fi/Bluetooth opcionales, dry-run sin efectos.'
+echo 'OK: Alpine/Debian, Fish obligatorio, Wi-Fi/Bluetooth/Rofi opcionales, dry-run sin efectos.'
