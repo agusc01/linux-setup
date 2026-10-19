@@ -31,7 +31,7 @@ marker="$data/managed"
 header='# linux-setup-managed: agusc01/linux-setup'
 managed_launcher() {
     [ -f "$launcher" ] && [ ! -L "$launcher" ] &&
-        head -n 1 "$launcher" | grep -Fqx "$header"
+        head -n 2 "$launcher" | grep -Fqx "$header"
 }
 managed_data() {
     [ -f "$marker" ] && [ ! -L "$marker" ] &&
@@ -115,8 +115,8 @@ chmod 755 "$temp_binary"
 mv -f "$temp_binary" "$binary"
 temp_launcher=$(mktemp "$prefix/bin/.linux-setup-dshortcuts.XXXXXXXX")
 cat > "$temp_launcher" <<'EOF'
-# linux-setup-managed: agusc01/linux-setup
 #!/bin/sh
+# linux-setup-managed: agusc01/linux-setup
 # Launcher del ejecutable C, sin depender de rutas Bash ni root.
 exec "$HOME/.local/share/linux-setup/dshortcuts/dshortcuts" "$@"
 EOF
