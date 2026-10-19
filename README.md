@@ -15,7 +15,7 @@ sh install.sh --dry-run
 sh install.sh
 ```
 
-En modo interactivo ofrece `fish` (obligatorio), `rotate`, `audio`, `brightness`, `wifi` y `bluetooth`. Sin interfaz interactiva, indicá `--modules fish,rotate,audio,brightness --yes`. Se confirma antes de instalar; no escribe configuraciones ajenas ni instala `doas`.
+En modo interactivo ofrece `fish` (obligatorio), `rotate`, `audio`, `brightness`, `wifi`, `bluetooth` y `rofi`. Sin interfaz interactiva, indicá `--modules fish,rotate,audio,brightness --yes`. Se confirma antes de instalar; no escribe configuraciones ajenas ni instala `doas`.
 
 Instala automáticamente Fish y Git mediante `apk` o `apt-get`, y las dependencias X11 (`xrandr`, `xinput`) solamente cuando se seleccionan rotación o brillo. Obtiene `linux-tools` desde GitHub y deja que ese proyecto instale y configure las funciones, audio, firmware y demás herramientas. Usa `doas`, `sudo` o `su` existentes solo para los paquetes. Nunca ejecuta todo el instalador como root.
 
@@ -31,7 +31,7 @@ No se fuerza sonido en equipos con otro códec. Para los detalles, ver la guía 
 
 ## Estado del proyecto
 
-**Primera entrega de bootstrap:** Fish, Git, rotación, brillo y audio; menú de texto. Todavía faltan el selector de módulos con `dialog`, instaladores de dwm/st/slock, dshortcuts, Rofi, dbar, Ranger y otros componentes. No se borra ni archiva ningún repositorio anterior.
+**Primera entrega de bootstrap:** Fish, Git, rotación, brillo y audio; menú de texto. Todavía faltan el selector de módulos con `dialog`, instaladores de dwm/st/slock, dshortcuts, dbar, Ranger y otros componentes. No se borra ni archiva ningún repositorio anterior.
 
 Ejecutá `sh tests/check.sh` para las pruebas básicas, sin instalar paquetes en el entorno de test.
 
@@ -46,3 +46,47 @@ En Alpine, Bluetooth prepara BlueZ y D-Bus de `main` con servicios OpenRC. La di
 Fish es obligatorio y linux-tools agrega `/sbin`, `/usr/sbin` y `/usr/local/sbin` al final del PATH cuando existan. Esto permite `wpa_cli`, `modprobe`, `rc-service` y otras herramientas **sin** prefijar `/sbin/` a cada comando. No concede permisos elevados: `doas` o `su` siguen siendo necesarios para operaciones de root.
 
 Si el cambio se instaló en una terminal que ya estaba abierta, recargar `source ~/.config/fish/conf.d/linux-tools.fish` o abrir otra sesión Fish.
+
+## Recuperación del control Wi-Fi comprobado en Alpine
+
+La notebook usa `wpa_supplicant` para `wlan0`, con DHCP mediante `udhcpc`. Después de instalar el módulo Wi-Fi y conectar una red, `lt-wifi status` y `lt-wifi list` funcionan sin configurar un socket. Para permitir **administración de redes guardadas** desde Fish, el archivo de configuración de `wpa_supplicant` debe contener estas directivas globales, **fuera de `network={...}`**:
+
+```ini
+ctrl_interface=/run/wpa_supplicant
+ctrl_interface_group=wheel
+```
+
+No se debe almacenar un PSK real en GitHub ni imprimir el contenido del archivo en tickets o capturas: el PSK hexadecimal también permite autenticarse en la red. Antes de editar, guardar un respaldo root:root con permisos 0600. El grupo wheel debe incluir únicamente cuentas de confianza, porque estas directivas permiten controlar conexiones a sus miembros. El script **no** modifica ese archivo ni reinicia `wpa_supplicant`: hay que programar el reinicio del servicio manualmente cuando se pueda tolerar una interrupción de conectividad.
+
+Comprobar la configuración tras reiniciar de forma controlada:
+
+```sh
+wpa_cli -i wlan0 ping            # PONG
+lt-wifi doctor                  # Socket de control: OK
+lt-wifi connections             # Lista de redes ya guardadas
+```
+
+No mostrar todo `/etc/wpa_supplicant/wpa_supplicant.conf`, porque puede contener credenciales. Para confirmar solamente directivas globales:
+
+```sh
+doas grep -E '^[[:space:]]*(ctrl_interface|ctrl_interface_group)=' /etc/wpa_supplicant/wpa_supplicant.conf
+```
+
+Esto reproduce lo que **sí se verificó** en el equipo sin guardar contraseñas en el repositorio.
+
+## Rofi para dwm (módulo independiente)
+
+```sh
+sh install.sh --modules rofi --dry-run
+sh install.sh --modules rofi
+lt-rofi
+lt-rofi apps
+lt-rofi run
+lt-rofi windows
+lt-rofi wifi
+lt-rofi bluetooth
+```
+
+`linux-setup` delega toda la lógica en `linux-tools`: menú Rofi con aplicaciones, comandos, ventanas y consultas de redes/dispositivos, sin cambiar conexiones. En Alpine usa el paquete `rofi-x11-wayland` desde `community` de la **misma rama estable temporalmente**, en Debian/Ubuntu usa `rofi`. El instalador no sobrescribe `config.h` de dwm ni cambia los atajos existentes.
+
+El programa C `dshortcuts` se mantiene en su propio repositorio. Su configuración histórica referencia `~/.bash_scripts`; primero hay que adaptar esos atajos para que apunten a `linux-tools` antes de instalarlo en una nueva máquina.
