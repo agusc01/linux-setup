@@ -90,3 +90,22 @@ lt-rofi bluetooth
 `linux-setup` delega toda la lógica en `linux-tools`: menú Rofi con aplicaciones, comandos, ventanas y consultas de redes/dispositivos, sin cambiar conexiones. En Alpine usa el paquete `rofi-x11-wayland` desde `community` de la **misma rama estable temporalmente**, en Debian/Ubuntu usa `rofi`. El instalador no sobrescribe `config.h` de dwm ni cambia los atajos existentes.
 
 El programa C `dshortcuts` se mantiene en su propio repositorio. Su configuración histórica referencia `~/.bash_scripts`; primero hay que adaptar esos atajos para que apunten a `linux-tools` antes de instalarlo en una nueva máquina.
+
+## dshortcuts (fork C) con Fish y linux-tools
+
+El fork `agusc01/dshortcuts` conserva su repositorio y su código original; por limitaciones de permisos del conector, esta integración no escribe sobre el fork. `linux-setup` obtiene una **revisión exacta fijada** (`2f29a3dffa606f8823d80a6a7ff381ff0a1b1ab6`), crea una copia temporal, sustituye el menú por la plantilla `profiles/dshortcuts/{config.h,items.h}`, aplica un parche acotado para impedir lectura fuera de los límites en el menú y compila como usuario normal.
+
+```sh
+sh install.sh --modules dshortcuts --dry-run
+sh install.sh --modules dshortcuts
+dshortcuts -v
+dshortcuts
+```
+
+Seleccionar `dshortcuts` incluye automáticamente **fish, rotate, audio, brightness, wifi, bluetooth, rofi y shortcuts**. También instala el compilador, `make`, `patch` y cabeceras X11. El ejecutable se guarda en `~/.local/share/linux-setup/dshortcuts/dshortcuts` y se lanza con un script de usuario en `~/.local/bin/dshortcuts`. Un launcher existente ajeno **no se sobrescribe**, y no se llama `make install` como root. No se alteran `dwm/keys.h`, `st`, `slock` ni el `PATH` de root.
+
+Menú nuevo disponible: aplicaciones, ejecutar, cambiar ventanas, volumen, brillo, rotación completa de pantalla y táctil, consultar redes Wi-Fi y dispositivos Bluetooth. Todas las acciones se despachan mediante `lt-shortcut`, con claves permitidas; no hay botones de apagado/reinicio sin confirmación ni referencias antiguas a `~/.bash_scripts`. Para que las opciones funcionen, `linux-tools` debe haber instalado los módulos indicados.
+
+Si usás el fork dwm con el atajo `Super+P`, éste seguirá abriendo `dshortcuts` siempre que dwm encuentre `~/.local/bin` en su PATH. Si el dwm instalado es el original de suckless, ese atajo **no existe** hasta que se configure manualmente.
+
+**Pendiente:** trasladar los menús especializados para navegadores, layouts, gaps y señales de dwm; no se anuncian como funcionales mientras sus scripts no estén adaptados.

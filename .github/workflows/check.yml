@@ -1,10 +1,32 @@
-name: Bootstrap checks
+name: Bootstrap and dshortcuts checks
 on:
   push:
   pull_request:
+
 jobs:
-  sh:
+  bootstrap:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: sh tests/check.sh
+  dshortcuts-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install X11 build libraries
+        run: sudo apt-get update && sudo apt-get install -y build-essential git patch libx11-dev libxft-dev libxinerama-dev libxext-dev libfontconfig1-dev libfreetype-dev
+      - name: Build pinned dshortcuts without root
+        run: sh lib/dshortcuts-setup.sh --yes && sh lib/dshortcuts-setup.sh --verify
+      - name: Check menu and absence of legacy shell references
+        run: '! grep -E "SCRIPT_DSHORTCUTS|SCRIPT_ROFI|~/.bash_scripts" profiles/dshortcuts/items.h'
+  dshortcuts-alpine:
+    runs-on: ubuntu-latest
+    container: alpine:3.24
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare build toolchain
+        run: apk add --no-cache build-base git patch libx11-dev libxft-dev libxinerama-dev libxext-dev fontconfig-dev freetype-dev ca-certificates
+      - name: Check real build as unprivileged user
+        run: |
+          adduser -D tester
+          su tester -s /bin/sh -c "cd '$GITHUB_WORKSPACE' && sh lib/dshortcuts-setup.sh --yes && sh lib/dshortcuts-setup.sh --verify"
