@@ -1,5 +1,5 @@
 /* linux-setup-managed: agusc01/linux-setup */
-/* Cada acción se delega en lt-shortcut: ninguna ruta ~/.bash_scripts. */
+/* Cada acción se delega en lt-shortcut; no utiliza utilidades heredadas. */
 static item sound[] = {
     { "j", "Bajar volumen 10%" },
     { "k", "Subir volumen 10%" },
