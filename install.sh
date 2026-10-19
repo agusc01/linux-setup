@@ -10,7 +10,7 @@ release=/etc/os-release
 
 usage() {
     printf '%s\n' \
-        'Uso: sh install.sh [--modules fish,rotate,audio,brightness,wifi,bluetooth,rofi] [--dry-run] [--yes] [--tools-dir RUTA]' \
+        'Uso: sh install.sh [--modules fish,rotate,audio,brightness,wifi,bluetooth,rofi,dshortcuts] [--dry-run] [--yes] [--tools-dir RUTA]' \
         'Fish es obligatorio; los módulos opcionales se delegan a linux-tools.' \
         'No instala ni configura doas. Acepta doas/sudo/su ya disponibles.'
 }
@@ -56,7 +56,7 @@ if [ -z "$modules" ]; then
     modules=fish,rotate,audio,brightness
     if [ -t 0 ] && [ "$assume_yes" -eq 0 ] && [ "$dry_run" -eq 0 ]; then
         echo 'Seleccioná los módulos (separados por coma):'
-        echo 'fish [obligatorio], rotate [pantalla táctil X11], audio, brightness [X11], wifi, bluetooth, rofi'
+        echo 'fish [obligatorio], rotate [pantalla táctil X11], audio, brightness [X11], wifi, bluetooth, rofi, dshortcuts'
         printf 'Módulos [fish,rotate,audio,brightness]: '
         IFS= read -r reply || reply=''
         if [ -n "$reply" ]; then modules=$reply; fi
@@ -69,6 +69,7 @@ want_brightness=0
 want_wifi=0
 want_bluetooth=0
 want_rofi=0
+want_dshortcuts=0
 while [ -n "$requested" ]; do
     case "$requested" in
         *,*) item=${requested%%,*}; requested=${requested#*,} ;;
@@ -82,10 +83,21 @@ while [ -n "$requested" ]; do
         wifi) want_wifi=1 ;;
         bluetooth) want_bluetooth=1 ;;
         rofi) want_rofi=1 ;;
+        dshortcuts) want_dshortcuts=1 ;;
         *) echo "Módulo no disponible: $item" >&2; exit 2 ;;
     esac
 done
 
+# Un menú completo necesita los comandos de sus submenús.
+# No se copia ni parchea el fork original en GitHub.
+if [ "$want_dshortcuts" -eq 1 ]; then
+    want_rotate=1
+    want_audio=1
+    want_brightness=1
+    want_wifi=1
+    want_bluetooth=1
+    want_rofi=1
+fi
 selected=fish
 [ "$want_rotate" -eq 0 ] || selected="$selected,rotate"
 [ "$want_audio" -eq 0 ] || selected="$selected,audio"
@@ -93,6 +105,9 @@ selected=fish
 [ "$want_wifi" -eq 0 ] || selected="$selected,wifi"
 [ "$want_bluetooth" -eq 0 ] || selected="$selected,bluetooth"
 [ "$want_rofi" -eq 0 ] || selected="$selected,rofi"
+if [ "$want_dshortcuts" -eq 1 ]; then
+    selected="$selected,shortcuts"
+fi
 
 packages='fish git'
 if [ "$ID" = alpine ]; then
@@ -102,11 +117,22 @@ else
     if [ "$want_rotate" -eq 1 ]; then packages="$packages x11-xserver-utils xinput"
     elif [ "$want_brightness" -eq 1 ]; then packages="$packages x11-xserver-utils"; fi
 fi
+if [ "$want_dshortcuts" -eq 1 ]; then
+    if [ "$ID" = alpine ]; then
+        packages="$packages build-base patch libx11-dev libxft-dev libxinerama-dev libxext-dev fontconfig-dev freetype-dev"
+    else
+        packages="$packages build-essential patch libx11-dev libxft-dev libxinerama-dev libxext-dev libfontconfig1-dev libfreetype-dev"
+    fi
+fi
 echo "Sistema: $distro"
 echo "Módulos: $selected"
 echo "Paquetes base: $packages"
 echo "Código de herramientas: $tools_dir"
 echo 'Audio, Wi-Fi, Bluetooth y Rofi se delegan a linux-tools; no se sustituyen redes activas.'
+if [ "$want_dshortcuts" -eq 1 ]; then
+    echo 'dshortcuts: se compilará una copia temporal del fork, no se modificarán sus fuentes originales.'
+    sh "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/dshortcuts-setup.sh" --dry-run
+fi
 
 if [ "$dry_run" -eq 1 ]; then
     echo 'Simulación: no se instalaron paquetes, no se clonó nada y no se modificaron archivos.'
@@ -161,5 +187,13 @@ if [ "$assume_yes" -eq 1 ]; then
     sh "$tools_dir/install.sh" --modules "$selected" --yes
 else
     sh "$tools_dir/install.sh" --modules "$selected"
+fi
+if [ "$want_dshortcuts" -eq 1 ]; then
+    setup_root=$(CDPATH= cd "$(dirname "$0")" && pwd)
+    if [ "$assume_yes" -eq 1 ]; then
+        sh "$setup_root/lib/dshortcuts-setup.sh" --yes
+    else
+        sh "$setup_root/lib/dshortcuts-setup.sh"
+    fi
 fi
 echo 'Instalación finalizada. Si acabás de instalar sof-firmware, reiniciá y probá aplay -l.'
