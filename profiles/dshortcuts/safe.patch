@@ -1,0 +1,13 @@
+--- a/dshortcuts.c
++++ b/dshortcuts.c
+@@ -84,10 +84,10 @@
+ static int
+ max_textw(void)
+ {
+ 	int len = 0;
+-	for (struct item *item = items; item && item->text; item++)
+-		len = MAX(TEXTW(item->text), len);
++	for (size_t i = 0; i < LENGTH(items); i++)
++		len = MAX(TEXTW(items[i].text), len);
+ 	return len;
+ }
