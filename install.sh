@@ -3,6 +3,7 @@
 # Bootstrap portable. Fish es obligatorio, pero no hace falta para arrancar.
 set -eu
 dry_run=0
+update_mode=0
 assume_yes=0
 modules=''
 menu_mode=auto
@@ -13,7 +14,7 @@ release=/etc/os-release
 
 usage() {
     printf '%s\n' \
-        'Uso: sh install.sh [--menu|--text-menu|--modules LISTA] [--dry-run] [--yes] [--tools-dir RUTA]' \
+        'Uso: sh install.sh [--menu|--text-menu|--modules LISTA] [--dry-run] [--update] [--yes] [--tools-dir RUTA]' \
         'Fish es obligatorio. --menu usa dialog o alternativa de texto si todavía no está disponible.' \
         '--modules conserva compatibilidad con scripts y CI. No configura doas.'
 }
@@ -29,6 +30,7 @@ while [ "$#" -gt 0 ]; do
         --menu) menu_requested=1; menu_mode=auto; shift ;;
         --text-menu) menu_requested=1; menu_mode=text; shift ;;
         --yes) assume_yes=1; shift ;;
+        --update) update_mode=1; shift ;;
         --dry-run) dry_run=1; shift ;;
         *) echo "Error: opción desconocida $1" >&2; exit 2 ;;
     esac
@@ -116,6 +118,22 @@ while [ -n "$requested" ]; do
         *) echo "Módulo no disponible: $item" >&2; exit 2 ;;
     esac
 done
+
+# Las actualizaciones son opt-in y no reinstalan Fish ni otros módulos.
+if [ "$update_mode" -eq 1 ]; then
+    [ "$modules" = doctor ] && [ "$menu_requested" -eq 0 ] || {
+        echo 'Error: --update requiere exclusivamente --modules doctor.' >&2
+        exit 2
+    }
+    updater="$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/linux-doctor-setup.sh"
+    if [ "$dry_run" -eq 1 ]; then
+        echo 'Simulación: actualizar linux-doctor (sin modificar otros módulos).'
+        sh "$updater" --dry-run
+    else
+        sh "$updater" --update
+    fi
+    exit 0
+fi
 
 # Un menú completo necesita los comandos de sus submenús.
 # No se copia ni parchea el fork original en GitHub.
