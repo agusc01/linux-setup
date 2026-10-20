@@ -102,6 +102,10 @@ dshortcuts -v
 dshortcuts
 ```
 
+También podés ejecutar **`sh lib/dshortcuts-setup.sh` directamente**: detecta los paquetes faltantes (por ejemplo, `patch`) e instala únicamente esos paquetes mediante `doas`, `sudo` o `su`, tras pedirte confirmación. No hace falta ejecutar `apk add patch` ni `apt-get install patch` manualmente. Ambos instaladores comparten la misma lista de dependencias para Alpine y Debian/Ubuntu.
+
+Los comandos `sh lib/dshortcuts-setup.sh --dry-run` y `sh lib/dshortcuts-setup.sh --verify` no instalan paquetes. La verificación exige que dshortcuts ya esté compilado. En cambio, `sh install.sh --modules dshortcuts` hace la instalación completa. **`--verify` no es una opción de ese instalador principal**; corresponde al script de dshortcuts y a linux-tools.
+
 Seleccionar `dshortcuts` incluye automáticamente **fish, rotate, audio, brightness, wifi, bluetooth, rofi y shortcuts**. También instala el compilador, `make`, `patch` y cabeceras X11. El ejecutable se guarda en `~/.local/share/linux-setup/dshortcuts/dshortcuts` y se lanza con un script de usuario en `~/.local/bin/dshortcuts`. Un launcher existente ajeno **no se sobrescribe**, y no se llama `make install` como root. No se alteran `dwm/keys.h`, `st`, `slock` ni el `PATH` de root.
 
 Menú nuevo disponible: aplicaciones, ejecutar, cambiar ventanas, volumen, brillo, rotación completa de pantalla y táctil, consultar redes Wi-Fi y dispositivos Bluetooth. Todas las acciones se despachan mediante `lt-shortcut`, con claves permitidas; no hay botones de apagado/reinicio sin confirmación ni referencias antiguas a `~/.bash_scripts`. Para que las opciones funcionen, `linux-tools` debe haber instalado los módulos indicados.
