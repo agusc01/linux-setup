@@ -269,7 +269,7 @@ elif [ -f "$fish_conf" ] && ! grep -Fxq "$fish_expected" "$fish_conf"; then
     echo "Aviso: se conserva $fish_conf porque no pertenece a linux-setup." >&2
 else
     mkdir -p "$fish_conf_dir"
-    printf '%s\\n' "$fish_expected" 'fish_add_path /sbin /usr/sbin' > "$fish_conf"
+    printf '%s\n' "$fish_expected" 'fish_add_path /sbin /usr/sbin' > "$fish_conf"
     echo 'Fish: /sbin y /usr/sbin disponibles en nuevas sesiones.'
 fi
 echo 'Instalación finalizada. Si acabás de instalar sof-firmware, reiniciá y probá aplay -l.'
