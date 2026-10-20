@@ -58,7 +58,7 @@ else
         ' 8) dwm          Gestor de ventanas' \
         ' 9) st           Terminal suckless' \
         '10) slock        Bloqueo de pantalla (setuid-root)' \
-        '11) doctor       Diagnóstico del sistema'
+        '11) doctor       Diagnóstico del sistema' \
         'Escribí números separados por comas, Enter para 1,2,3 o q para cancelar.' >&2
     printf 'Módulos [1,2,3]: ' >&2
     IFS= read -r numbers || exit 130
