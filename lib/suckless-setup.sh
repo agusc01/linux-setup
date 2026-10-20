@@ -64,7 +64,7 @@ packages_for() {
     case "$ID:$1" in
         alpine:dwm) echo 'git build-base pkgconf libx11-dev libxft-dev libxinerama-dev libxrender-dev libxcomposite-dev libxext-dev fontconfig-dev freetype-dev xorg-server xinit' ;;
         alpine:st) echo 'git build-base pkgconf libx11-dev libxft-dev fontconfig-dev freetype-dev ncurses' ;;
-        alpine:slock) echo 'git build-base libx11-dev libxext-dev libxrandr-dev' ;;
+        alpine:slock) echo 'git build-base linux-headers libx11-dev libxext-dev libxrandr-dev' ;;
         debian:dwm|ubuntu:dwm) echo 'git build-essential pkg-config libx11-dev libxft-dev libxinerama-dev libxrender-dev libxcomposite-dev libxext-dev libimlib2-dev libfontconfig1-dev libfreetype-dev xserver-xorg xinit' ;;
         debian:st|ubuntu:st) echo 'git build-essential pkg-config libx11-dev libxft-dev libfontconfig1-dev libfreetype-dev ncurses-bin' ;;
         debian:slock|ubuntu:slock) echo 'git build-essential libx11-dev libxext-dev libxrandr-dev' ;;
