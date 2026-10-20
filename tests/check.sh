@@ -103,6 +103,14 @@ LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules dwm,st,
 grep -Fxq 'Suckless: dwm,st,slock' "$tmp/result"
 grep -Fq 'imlib2-dev se instala desde community temporal' "$tmp/result"
 grep -Fq 'Xorg (Alpine): setup-xorg-base' "$tmp/result"
+# Evitar regresión: preparar consola gráfica implica gestor de sesiones,
+# no solo instalar xorg-server y añadir grupos.
+grep -Fq '/sbin/apk add --no-cache dbus elogind' "$root/lib/xorg-setup.sh"
+grep -Fq 'rc-update add "$service" default' "$root/lib/xorg-setup.sh"
+grep -Fq 'rc-service "$service" start' "$root/lib/xorg-setup.sh"
+grep -Fq 'rc-service "$service" status' "$root/lib/xorg-setup.sh"
+grep -Fq 'seatd ya está habilitado' "$root/lib/xorg-setup.sh"
+
 grep -Fq 'AVISO: setup-xorg-base puede habilitar community' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/lib/xorg-setup.sh" --dry-run > "$tmp/xorg-result"
 grep -Fq 'no se modificaron paquetes, repositorios ni servicios' "$tmp/xorg-result"

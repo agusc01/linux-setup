@@ -31,6 +31,20 @@ Te pide el nombre del usuario, valida o crea la cuenta y gestiona su contraseña
 
 Después entrá como el usuario normal y ejecutá `git clone https://github.com/agusc01/linux-setup.git`, `cd linux-setup` y `sh install.sh`. Al elegir `dwm`, Alpine configura también `input`, `video` y `audio` para ese usuario (cuando existen). Cerrá e iniciá sesión nuevamente si se agregaron grupos.
 
+## Recuperar `startx` después de instalar Alpine
+
+Si aparece `xf86OpenConsole: Cannot open virtual console 1 (Permission denied)`, Xorg no tiene acceso a la sesión de consola. No ejecutes `doas startx` ni cambies permisos de `/dev/tty*`.
+
+Primero reiniciá Alpine si acabás de instalar Xorg/eudev o de agregar grupos, porque la sesión anterior puede tener permisos antiguos. Si persiste, ejecutá desde `linux-setup` como usuario normal:
+
+```sh
+git pull --ff-only origin main
+sh lib/xorg-setup.sh --dry-run
+sh lib/xorg-setup.sh
+```
+
+En Alpine, el instalador prepara D-Bus y elogind, inicia y habilita sus servicios en OpenRC, y respeta un gestor `seatd` ya habilitado para no configurarlos en paralelo. Reiniciá y volvé a iniciar sesión en una TTY antes de probar `startx`. Esto también funciona si dwm ya estaba instalado; **no requiere recompilarlo**.
+
 ## Primer arranque
 
 Con `bootstrap.sh` completado y una sesión de usuario normal, Git ya está disponible y podés clonar el repositorio.
