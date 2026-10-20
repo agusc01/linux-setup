@@ -1,176 +1,50 @@
-# Preparación inicial: Alpine Linux y Debian
+# Preparación inicial automatizada (Alpine / Debian / Ubuntu)
 
-Esta guía cubre **lo que se realiza una sola vez como root**, antes de ejecutar el instalador `linux-setup` como usuario normal. Sustituí `USUARIO` por el nombre real de la cuenta y elegí **únicamente** la sección de tu distribución.
+El objetivo es que, tras instalar el sistema operativo, **no tengas que escribir comandos `apk add doas git`, `adduser`, `usermod`, crear reglas de `doas` ni asignar grupos de Xorg manualmente**.
 
-> **Seguridad:** en Alpine, la regla de `doas` para `wheel` concede privilegios administrativos; en Debian, los integrantes del grupo `sudo` pueden obtenerlos mediante `sudo` cuando la política del sistema lo permite. Usá autenticación con contraseña, evitá configurar `nopass` o `NOPASSWD` y no sobrescribas configuraciones existentes sin revisarlas. No ejecutes `linux-setup` completo como root.
+## Primer arranque: usuario root
 
-## Alpine Linux
-
-### 1. Repositorios APK
-
-Como root, comprobá la rama estable instalada:
+Después de ejecutar `setup-alpine` (en Alpine) e iniciar sesión como root, necesitás descargar el bootstrap desde este repositorio. Alpine Standard incluye normalmente el cliente `wget` de BusyBox. Descargá el archivo para poder inspeccionarlo y ejecutarlo, **no lo canalices directamente a `sh`**:
 
 ```sh
-cat /etc/alpine-release
-cat /etc/apk/repositories
+wget -O bootstrap.sh https://raw.githubusercontent.com/agusc01/linux-setup/main/bootstrap.sh
+sh bootstrap.sh
 ```
 
-Editá el archivo **solamente si es necesario**:
+En Debian/Ubuntu, iniciá como root (`su -`) y utilizá el mismo script. Si `wget` no está disponible, descargá el archivo con el cliente HTTP ya instalado; el programa de preparación no requiere Git de antemano.
 
-```sh
-vi /etc/apk/repositories
-```
+El asistente solicita **solo el nombre del usuario** y, cuando crea una cuenta nueva, el sistema operativo pide su contraseña. Si la cuenta existe, comprueba su UID, home y shell para no confundirla con una cuenta de servicio. Solo admite nombres de usuario sencillos en minúsculas, con números, guiones y guion bajo.
 
-Ejemplo de las líneas para la **misma rama de tu instalación** (reemplazá `vX.X` por la rama real, por ejemplo `v3.24`; **no** uses `v3.24.2`):
+| Tarea | Alpine | Debian/Ubuntu |
+|---|---|---|
+| Paquetes previos | `apk update; apk add doas git` | `apt-get update; apt-get install -y sudo git` |
+| Cuenta nueva | `adduser` | `adduser` |
+| Grupo administrativo | `wheel` | `sudo` |
+| Política | `/etc/doas.d/linux-setup.conf`, autenticación requerida | Política `sudoers` propia del sistema |
 
-```text
-https://dl-cdn.alpinelinux.org/alpine/vX.X/main
-https://dl-cdn.alpinelinux.org/alpine/vX.X/community
-```
+El bootstrap no sustituye archivos ajenos de `doas` ni habilita `nopass`. Comprueba que el usuario pertenezca al grupo y ejecuta una verificación real como ese usuario (`doas id -u` o `sudo id -u`). Deberá imprimir `0`, y se solicita su contraseña cuando corresponda. Si no puede confirmar la autenticación, **no declara el proceso completado** y muestra cómo repetir la comprobación. El bootstrap requiere TTY interactiva y ejecutarse como root.
 
-`main` cubre el sistema base; `community` permite algunos paquetes opcionales. Podés dejar `community` comentado cuando no lo necesites: algunos módulos lo utilizan **temporalmente** y no cambian el listado permanente. No elimines repositorios personalizados ni mezcles ramas diferentes. Actualizá los índices:
+> La pertenencia a `wheel` o `sudo` concede permisos administrativos. No lo ejecutes para cuentas de usuarios que no deban administrarlo.
 
-```sh
-apk update
-```
+## Continuar como usuario normal
 
-### 2. Crear usuario y habilitar doas
-
-Como **root**, para una instalación nueva, ejecutá:
-
-```sh
-apk add doas git
-adduser -h /home/USUARIO -s /bin/ash USUARIO
-adduser USUARIO wheel
-```
-
-`adduser` pedirá la contraseña de la cuenta. Si el usuario ya existe, **no** lo recrees: agregalo solamente a `wheel` si corresponde.
-
-Configurá doas con contraseña. Si ya hay reglas en `/etc/doas.d/doas.conf`, revisalas y editá el archivo en lugar de sobrescribirlas:
-
-```sh
-mkdir -p /etc/doas.d
-printf 'permit :wheel\n' > /etc/doas.d/doas.conf
-chmod 0400 /etc/doas.d/doas.conf
-```
-
-Los comandos anteriores crean la configuración de una **instalación nueva**; la redirección `>` reemplaza el contenido si el archivo ya existe. Cerrá la sesión root, iniciá como `USUARIO` y comprobá:
-
-```sh
-doas id -u
-doas apk update
-```
-
-`doas id -u` debe imprimir `0`.
-
-## Debian (también aplicable a Ubuntu con ajustes mínimos)
-
-### 1. Repositorios APT
-
-Debian **no** usa `/etc/apk/repositories`. Los repositorios suelen configurarse en `/etc/apt/sources.list.d/debian.sources` (formato deb822 en instalaciones modernas) o en `/etc/apt/sources.list` (formato tradicional).
-
-Como root:
-
-```sh
-cat /etc/os-release
-ls /etc/apt/sources.list.d/
-apt update
-```
-
-Para modificar las fuentes, editá **el archivo que realmente utiliza tu instalación**, por ejemplo:
-
-```sh
-vi /etc/apt/sources.list.d/debian.sources
-```
-
-Ejemplo orientativo para **Debian 13 (Trixie)**, formato deb822; no lo copies en versiones distintas:
-
-```text
-Types: deb
-URIs: http://deb.debian.org/debian
-Suites: trixie trixie-updates
-Components: main
-Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-
-Types: deb
-URIs: http://security.debian.org/debian-security
-Suites: trixie-security
-Components: main
-Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-```
-
-No dupliques entradas si ya están presentes, ni reemplaces los repositorios de Ubuntu por los de Debian.
-
-### 2. Crear usuario y habilitar sudo
-
-En Debian se utiliza **`sudo`** para administrar el sistema. No hace falta instalar ni configurar `doas`.
-
-Como root, instalá `sudo` y Git si faltan:
-
-```sh
-apt update
-apt install sudo git
-```
-
-En una instalación nueva, creá el usuario si todavía no existe y añadilo al grupo `sudo`:
-
-```sh
-adduser USUARIO
-usermod -aG sudo USUARIO
-```
-
-Si el usuario ya existe, **no** vuelvas a crearlo: utilizá únicamente `usermod -aG sudo USUARIO` si todavía no pertenece al grupo. `-aG` conserva los demás grupos.
-
-En Debian, las instalaciones habituales incluyen una regla para el grupo `sudo` en `/etc/sudoers`, pero verificá que esté habilitada mediante `visudo` si `sudo` no funciona. **No uses redirecciones sobre `/etc/sudoers`**: un error de sintaxis podría bloquear el acceso administrativo.
-
-Cerrá la sesión root e iniciá una sesión nueva como `USUARIO` para aplicar los grupos. Comprobá:
-
-```sh
-groups
-sudo id -u
-sudo apt update
-```
-
-`sudo id -u` debe imprimir `0`. Si `sudo` no está configurado en esa instalación, regresá a root para revisarlo sin modificar permisos a ciegas.
-
-## Instalación común, sin comandos manuales adicionales
-
-Desde aquí, `linux-setup` utiliza `doas` en Alpine o `sudo` en Debian cuando necesita instalar paquetes, y su instalación se ejecuta como usuario normal.
-
-Con la sesión abierta como **usuario normal**:
+Cerrá la sesión root, entrá con la cuenta creada y ejecutá:
 
 ```sh
 git clone https://github.com/agusc01/linux-setup.git
 cd linux-setup
-sh install.sh --dry-run
+sh tests/check.sh
 sh install.sh
 ```
 
-El instalador detecta Alpine o Debian/Ubuntu y prepara sus dependencias:
+Si elegís `dwm`, el instalador ejecuta automáticamente la preparación de Xorg. **En Alpine, además asigna los grupos `input`, `video` y `audio` al usuario que está ejecutando el instalador**, si existen y aún no pertenecía a ellos. Las asignaciones se hacen con privilegios por `doas`; no se añaden a root ni se modifican otros usuarios. Cerrá sesión y volvé a entrar para que los nuevos grupos se apliquen.
 
-| Función | Alpine | Debian/Ubuntu |
-|---|---|---|
-| `whereis` | `util-linux-misc` | `util-linux` |
-| Fish | `fish` | `fish` |
-| Git | `git` | `git` |
-| Paquetes | `apk` | `apt-get` |
+En Debian/Ubuntu no añade esos grupos indiscriminadamente: normalmente los dispositivos se gestionan con permisos de sesión a través de logind.
 
-**No necesitás ejecutar `apk add util-linux-misc` ni `apt install util-linux` manualmente** después de instalar con `linux-setup`.
+## Repositorios
 
-El instalador también deja `~/.config/fish/conf.d/linux-setup-path.fish` con:
+El archivo de Alpine es `/etc/apk/repositories`. La rama debe coincidir con `/etc/alpine-release` (por ejemplo `v3.24` para `3.24.2`). La instalación de Xorg puede habilitar `community`; se anuncia en la simulación. Debian/Ubuntu utilizan repositorios APT, típicamente bajo `/etc/apt/sources.list.d/`. El script no reemplaza listas de repositorios existentes.
 
-```fish
-fish_add_path /sbin /usr/sbin
-```
+## Seguridad y alcance
 
-Esto agrega rutas administrativas al `PATH` de **nuevas sesiones Fish**, sin dar privilegios root y sin afectar otras shells. Si el archivo ya existe y no pertenece al instalador, se conserva sin sobrescribirlo.
-
-Para comprobarlo en una nueva sesión Fish:
-
-```fish
-whereis dwm
-type -a rc-service
-fish --version
-```
-
-`rc-service` es propio de OpenRC (Alpine); en Debian con systemd corresponde `systemctl`. La disponibilidad de comandos concretos depende de los módulos que selecciones.
+La primera descarga del bootstrap debe proceder del repositorio oficial y conviene revisar su contenido antes de ejecutarlo como root. Los cambios administrativos se aplican solo después de ejecutar expresamente `sh bootstrap.sh`. La instalación principal se ejecuta **como usuario normal**, sin root permanente. Una cuenta existente con un home diferente, UID de servicio o shell inválida se rechaza en lugar de modificarla.
