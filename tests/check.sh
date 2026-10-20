@@ -107,5 +107,9 @@ grep -Fq 'linux-setup-path.fish' "$root/install.sh"
 grep -Fq 'Paquetes base: fish git util-linux' "$tmp/result"
 test -f "$root/docs/primeros-pasos.md"
 grep -Fq 'permit :wheel' "$root/docs/primeros-pasos.md"
-grep -Fq 'permit :sudo' "$root/docs/primeros-pasos.md"
-echo 'OK: Alpine/Debian, whereis, PATH Fish, doas documentado y módulos seguros.'
+grep -Fq 'apt install sudo git' "$root/docs/primeros-pasos.md"
+grep -Fq 'sudo apt update' "$root/docs/primeros-pasos.md"
+if grep -Fq 'apt install doas' "$root/docs/primeros-pasos.md"; then
+    echo 'FALLO: Debian no debe instalar doas.' >&2; exit 1
+fi
+echo 'OK: Alpine/Debian, whereis, PATH Fish, doas Alpine, sudo Debian y módulos seguros.'
