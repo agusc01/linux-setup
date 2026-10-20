@@ -14,11 +14,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install X11 build libraries
-        run: sudo apt-get update && sudo apt-get install -y build-essential git patch libx11-dev libxft-dev libxinerama-dev libxext-dev libfontconfig1-dev libfreetype-dev
+        run: sudo apt-get update && sudo apt-get install -y build-essential git patch libx11-dev libxft-dev libxinerama-dev libxext-dev libfontconfig1-dev libfreetype-dev xvfb xauth
       - name: Build pinned dshortcuts without root
         run: sh lib/dshortcuts-setup.sh --yes && sh lib/dshortcuts-setup.sh --verify
       - name: Check menu and absence of legacy shell references
         run: '! grep -E "SCRIPT_DSHORTCUTS|SCRIPT_ROFI|~/.bash_scripts" profiles/dshortcuts/items.h'
+      - name: Navigate into nested menus under Xvfb without crashing
+        run: |
+          for path in m r "m v" "m b"; do
+            code=0
+            # timeout=124 means the menu stayed open, waiting for keyboard input.
+            xvfb-run -a timeout 3s "$HOME/.local/bin/dshortcuts" $path || code=$?
+            if [ "$code" -ne 124 ]; then
+              echo "Submenú '$path' falló con código $code"
+              exit 1
+            fi
+          done
   dshortcuts-alpine:
     runs-on: ubuntu-latest
     container: alpine:3.24
