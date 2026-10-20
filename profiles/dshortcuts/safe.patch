@@ -11,14 +11,14 @@
 +		len = MAX(TEXTW(items[i].text), len);
  	return len;
  }
-@@ -113,8 +113,9 @@ calccolumns(item* _parent, int l) {
+@@ -114,5 +114,6 @@ calccolumns(item* _parent, int l) {
      int cw = calccolumnwidth(_parent, l); /* sets columnwidth */
      int c = (mw - 2 * outpaddingvert) / cw;
  
 +    c = MAX(1, c); /* no dividir por cero si una opción es más ancha que el menú */
      return (c < columns || columns == 0) ? c : columns;
  }
-@@ -149,9 +150,10 @@ push(item *it) {
+@@ -149,8 +150,9 @@ push(item *it) {
      if (!itstack) {
  	/* create "master" node */
  	stack *master = (struct stack*)malloc(sizeof(struct stack));
