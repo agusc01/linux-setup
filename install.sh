@@ -94,6 +94,7 @@ want_dshortcuts=0
 want_dwm=0
 want_st=0
 want_slock=0
+want_doctor=0
 while [ -n "$requested" ]; do
     case "$requested" in
         *,*) item=${requested%%,*}; requested=${requested#*,} ;;
@@ -111,6 +112,7 @@ while [ -n "$requested" ]; do
         dwm) want_dwm=1 ;;
         st) want_st=1 ;;
         slock) want_slock=1 ;;
+        doctor) want_doctor=1 ;;
         *) echo "Módulo no disponible: $item" >&2; exit 2 ;;
     esac
 done
@@ -135,6 +137,8 @@ selected=fish
 if [ "$want_dshortcuts" -eq 1 ]; then
     selected="$selected,shortcuts"
 fi
+# doctor pertenece a linux-setup, no a linux-tools.
+[ "$want_doctor" -eq 0 ] || echo 'Módulo adicional: linux-doctor (opcional)'
 suckless_selected=''
 [ "$want_dwm" -eq 0 ] || suckless_selected=dwm
 if [ "$want_st" -eq 1 ]; then
@@ -167,6 +171,9 @@ echo 'Audio, Wi-Fi, Bluetooth y Rofi se delegan a linux-tools; no se sustituyen 
 if [ "$want_dshortcuts" -eq 1 ]; then
     echo 'dshortcuts: se compilará una copia temporal del fork, no se modificarán sus fuentes originales.'
     sh "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/dshortcuts-setup.sh" --dry-run
+fi
+if [ "$want_doctor" -eq 1 ]; then
+    sh "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/linux-doctor-setup.sh" --dry-run
 fi
 if [ -n "$suckless_selected" ]; then
     echo "Suckless: $suckless_selected (módulos independientes; sin reemplazos automáticos)."
@@ -242,5 +249,8 @@ if [ "$want_dshortcuts" -eq 1 ]; then
     else
         sh "$setup_root/lib/dshortcuts-setup.sh"
     fi
+fi
+if [ "$want_doctor" -eq 1 ]; then
+    sh "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/linux-doctor-setup.sh"
 fi
 echo 'Instalación finalizada. Si acabás de instalar sof-firmware, reiniciá y probá aplay -l.'
