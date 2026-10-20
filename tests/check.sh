@@ -2,6 +2,10 @@
 # linux-setup-managed: agusc01/linux-setup
 set -eu
 root=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+printf "\n%s\n%s\n" "LINUX-SETUP | PRUEBAS AUTOMÁTICAS" "===================================="
+echo "Estas pruebas son simulaciones: no requieren ingresar números ni instalan paquetes."
+echo
+echo "[1/5] Validando sintaxis de scripts..." 
 sh -n "$root/install.sh"
 sh -n "$root/lib/dshortcuts-setup.sh"
 sh -n "$root/lib/dshortcuts-deps.sh"
@@ -10,7 +14,12 @@ sh -n "$root/lib/suckless-setup.sh"
 sh -n "$root/lib/module-selector.sh"
 sh -n "$root/lib/linux-doctor-setup.sh"
 sh -n "$root/tests/module-selector.sh"
+echo "      [OK] Sintaxis POSIX de instaladores y pruebas."
+echo
+printf "%s\n" "[2/5] Probando selectores (entradas simuladas)..." 
 sh "$root/tests/module-selector.sh"
+echo
+printf "%s\n" "[3/5] Revisando integraciones y dependencias..." 
 grep -Fq 'master->next = NULL' "$root/profiles/dshortcuts/safe.patch"
 grep -Fq 'c = MAX(1, c)' "$root/profiles/dshortcuts/safe.patch"
 grep -Fq 'view(&a)' "$root/profiles/dwm/rofi-window-focus.patch"
@@ -50,6 +59,9 @@ grep -Fq 'Instalando dependencias faltantes de dshortcuts: patch' "$tmp/deps-res
     dshortcuts_ensure_dependencies alpine
 ) | grep -Fq 'Dependencias de dshortcuts: ya instaladas.'
 
+echo '      [OK] Parches, plantillas y dependencias de dshortcuts.'
+echo
+printf '%s\n' '[4/5] Simulando instalación en Alpine...' 
 printf 'ID=alpine\nVERSION_ID=3.24.2\n' > "$tmp/os-release"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules audio,rotate --dry-run > "$tmp/result"
 grep -Fq 'Sistema: Alpine' "$tmp/result"
@@ -83,6 +95,9 @@ grep -Fq 'Módulo adicional: linux-doctor' "$tmp/result"
 grep -Fq 'Doctor: simulación' "$tmp/result"
 sh "$root/lib/linux-doctor-setup.sh" --dry-run | grep -Fq 'sin cambios ni reparaciones'
 
+echo '      [OK] Alpine: módulos, fuentes, whereis y linux-doctor.'
+echo
+printf '%s\n' '[5/5] Simulando instalación en Debian...' 
 printf 'ID=debian\nVERSION_ID=13\n' > "$tmp/os-release"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules doctor --dry-run > "$tmp/result"
 grep -Fq 'Módulo adicional: linux-doctor' "$tmp/result"
@@ -125,4 +140,5 @@ if grep -Fq 'apt install doas' "$root/docs/primeros-pasos.md"; then
     echo 'FALLO: no se debe recomendar doas en Debian.' >&2
     exit 1
 fi
-echo 'OK: Alpine/Debian, Fish obligatorio, dependencias automáticas y módulos dwm/st/slock seguros.'
+echo '      [OK] Debian: módulos, fuentes, whereis y linux-doctor.'
+printf '\n%s\n%s\n' '====================================' 'RESULTADO: TODAS LAS PRUEBAS SUPERADAS'
