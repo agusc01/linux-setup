@@ -53,11 +53,12 @@ printf 'ID=alpine\nVERSION_ID=3.24.2\n' > "$tmp/os-release"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules audio,rotate --dry-run > "$tmp/result"
 grep -Fq 'Sistema: Alpine' "$tmp/result"
 grep -Fxq 'Módulos: fish,rotate,audio' "$tmp/result"
+grep -Fq 'Paquetes base: fish git util-linux-misc' "$tmp/result"
 grep -Fq 'xrandr xinput' "$tmp/result"
 
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules wifi,bluetooth --dry-run > "$tmp/result"
 grep -Fxq 'Módulos: fish,wifi,bluetooth' "$tmp/result"
-grep -Fq 'Paquetes base: fish git' "$tmp/result"
+grep -Fq 'Paquetes base: fish git util-linux-misc' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules rofi --dry-run > "$tmp/result"
 grep -Fxq 'Módulos: fish,rofi' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules dshortcuts --dry-run > "$tmp/result"
@@ -75,7 +76,7 @@ grep -Fq 'Modo compilación:' "$tmp/result"
 printf 'ID=debian\nVERSION_ID=13\n' > "$tmp/os-release"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules brightness --dry-run > "$tmp/result"
 grep -Fq 'Sistema: Debian/Ubuntu' "$tmp/result"
-grep -Fq 'Paquetes base: fish git x11-xserver-utils' "$tmp/result"
+grep -Fq 'Paquetes base: fish git util-linux x11-xserver-utils' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules wifi,bluetooth --dry-run > "$tmp/result"
 grep -Fxq 'Módulos: fish,wifi,bluetooth' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules rofi --dry-run > "$tmp/result"
@@ -100,4 +101,11 @@ if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/lib/suckless-setup.sh" --m
     echo 'FALLO: suckless permitió usar un solo --source para múltiples módulos.' >&2
     exit 1
 fi
-echo 'OK: Alpine/Debian, Fish obligatorio, dependencias automáticas y módulos dwm/st/slock seguros.'
+# Verificar ruta administrada de Fish y documentación de primera instalación.
+grep -Fq 'fish_add_path /sbin /usr/sbin' "$root/install.sh"
+grep -Fq 'linux-setup-path.fish' "$root/install.sh"
+grep -Fq 'Paquetes base: fish git util-linux' "$tmp/result"
+test -f "$root/docs/primeros-pasos.md"
+grep -Fq 'permit :wheel' "$root/docs/primeros-pasos.md"
+grep -Fq 'permit :sudo' "$root/docs/primeros-pasos.md"
+echo 'OK: Alpine/Debian, whereis, PATH Fish, doas documentado y módulos seguros.'
