@@ -23,8 +23,9 @@ esac
 [ "${#username}" -le 32 ] || { echo 'Usuario demasiado largo (máximo 32 caracteres).' >&2; exit 2; }
 if id "$username" >/dev/null 2>&1; then
     # Una cuenta existente podría ser una cuenta del sistema, sin shell o con UID reservado.
-    home=$(getent passwd "$username" | cut -d: -f6)
-    shell=$(getent passwd "$username" | cut -d: -f7)
+    entry=$(awk -F: -v name="$username" '$1 == name { print; exit }' /etc/passwd)
+    home=$(printf '%s\n' "$entry" | cut -d: -f6)
+    shell=$(printf '%s\n' "$entry" | cut -d: -f7)
     uid=$(id -u "$username")
     if [ "$uid" -lt 1000 ] || [ "$home" != "/home/$username" ]; then
         echo 'La cuenta existe pero parece ser de sistema o tener un home diferente; no se modifica.' >&2
