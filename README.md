@@ -113,3 +113,32 @@ Menú nuevo disponible: aplicaciones, ejecutar, cambiar ventanas, volumen, brill
 Si usás el fork dwm con el atajo `Super+P`, éste seguirá abriendo `dshortcuts` siempre que dwm encuentre `~/.local/bin` en su PATH. Si el dwm instalado es el original de suckless, ese atajo **no existe** hasta que se configure manualmente.
 
 **Pendiente:** trasladar los menús especializados para navegadores, layouts, gaps y señales de dwm; no se anuncian como funcionales mientras sus scripts no estén adaptados.
+
+## Reparación de dshortcuts SIGSEGV y selección de ventanas Rofi en dwm
+
+Si los submenús **Equipo** o **Rotar pantalla y táctil** cierran dshortcuts con SIGSEGV, actualizá linux-setup y recompilá **como usuario normal**:
+
+```sh
+git pull --ff-only origin main
+sh lib/dshortcuts-setup.sh --dry-run
+sh lib/dshortcuts-setup.sh
+sh lib/dshortcuts-setup.sh --verify
+dshortcuts
+```
+
+El parche al fork C inicializa `master->next` al entrar por primera vez a un submenú y evita obtener cero columnas con textos largos. Las pruebas de CI ahora navegan por menús anidados bajo Xvfb para detectar bloqueos o señales fatales. El código fuente original en GitHub no se modifica.
+
+Por defecto dwm interpreta una petición `_NET_ACTIVE_WINDOW` como urgencia (se destaca el tag en la barra), sin navegar al tag ni enfocar la ventana. Por eso `lt-rofi windows` puede listar ventanas de otros escritorios pero no cambiar a ellas. El arreglo pertenece al **gestor dwm**, no a Rofi.
+
+Para el dwm compilado originalmente en `/usr/src/suckless/dwm`, **opt-in** (no se ejecuta al instalar dshortcuts):
+
+```sh
+sh lib/dwm-rofi-setup.sh --dry-run
+sh lib/dwm-rofi-setup.sh
+```
+
+Si el código fuente está en otro directorio, utilizá `--source /ruta/al/dwm`. El instalador usa una copia temporal del código fuente existente, **preserva config.h/keys.h**, aplica un parche acotado a `clientmessage`, compila sin modificar el checkout y, tras un respaldo privado en `~/.local/state/linux-setup/backups/`, instala en `/usr/local/bin/dwm`. Solo toca el binario después de comprobar que compiló. Solicita autorización para las dependencias faltantes y para instalar el ejecutable; nunca ejecuta la compilación como root. No modifica `.xinitrc` ni reinicia la sesión X11.
+
+Al terminar, cerrá dwm de manera normal e iniciá nuevamente `startx` para usar el ejecutable nuevo. Probá `lt-rofi windows` seleccionando una ventana en el tag actual y luego otra en un tag diferente: debe enfocar cada una sin moverlas permanentemente de tag.
+
+El parche fue diseñado para el manejo estándar de `_NET_ACTIVE_WINDOW` usado tanto en dwm original como en el fork consultado. Si `patch` lo rechaza en una versión más modificada, el instalador aborta sin cambiar el binario anterior. No se sobrescriben modificaciones ajenas en el código fuente.
