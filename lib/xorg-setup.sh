@@ -61,6 +61,32 @@ case "$ID" in
         ;;
     *) echo "Sistema no soportado: $ID" >&2; exit 1 ;;
 esac
+# Xorg iniciado desde una TTY necesita una sesión con acceso a VT/DRM.
+# setup-xorg-base prepara eudev, pero no garantiza un gestor de sesiones.
+if [ "$ID" = alpine ]; then
+    if command -v rc-service >/dev/null 2>&1 && \
+       { rc-service seatd status >/dev/null 2>&1 || \
+         rc-update show default 2>/dev/null | grep -Eq '(^|[[:space:]])seatd([[:space:]]|$)'; }; then
+        echo 'Xorg: seatd ya está habilitado; no se instala elogind en paralelo.' >&2
+        echo 'Xorg: verificá el acceso a la TTY y el gestor de sesiones existente.' >&2
+    else
+        echo 'Xorg: preparando D-Bus y elogind para sesiones gráficas sin root...'
+        dshortcuts_as_root /sbin/apk add --no-cache dbus elogind
+        for service in dbus elogind; do
+            if ! rc-update show default 2>/dev/null | grep -Eq "(^|[[:space:]])$service([[:space:]]|$)"; then
+                dshortcuts_as_root rc-update add "$service" default
+            fi
+            if ! rc-service "$service" status >/dev/null 2>&1; then
+                dshortcuts_as_root rc-service "$service" start
+            fi
+            rc-service "$service" status >/dev/null 2>&1 || {
+                echo "Error: el servicio $service no está activo." >&2; exit 1
+            }
+        done
+        echo 'Xorg: D-Bus y elogind habilitados y activos.'
+        echo 'Xorg: reiniciá Alpine y abrí una nueva TTY antes de startx.'
+    fi
+fi
 # Los permisos de dispositivos se aplican únicamente al usuario que pidió dwm,
 # tras aceptar la instalación. Sin cambios en Debian: logind maneja ACL de sesión.
 if [ "$ID" = alpine ]; then
