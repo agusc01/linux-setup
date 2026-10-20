@@ -61,4 +61,30 @@ case "$ID" in
         ;;
     *) echo "Sistema no soportado: $ID" >&2; exit 1 ;;
 esac
-echo 'Xorg: preparación completada. No se añadió al usuario a input/video automáticamente.'
+# Los permisos de dispositivos se aplican únicamente al usuario que pidió dwm,
+# tras aceptar la instalación. Sin cambios en Debian: logind maneja ACL de sesión.
+if [ "$ID" = alpine ]; then
+    current_user=$(id -un)
+    case "$current_user" in
+        ''|root) echo 'Error: no se permite modificar grupos de root.' >&2; exit 1 ;;
+    esac
+    # Comprobar que la cuenta existe antes de elevar permisos.
+    id "$current_user" >/dev/null 2>&1 || { echo 'Error: usuario no válido.' >&2; exit 1; }
+    for group in input video audio; do
+        if ! grep -q "^$group:" /etc/group; then
+            echo "Xorg: no existe el grupo $group; se omite." >&2
+            continue
+        fi
+        if id -nG "$current_user" | tr ' ' '\\n' | grep -Fxq "$group"; then
+            echo "Xorg: $current_user ya pertenece a $group."
+        else
+            echo "Xorg: agregando $current_user al grupo $group."
+            dshortcuts_as_root adduser "$current_user" "$group"
+            id -nG "$current_user" | tr ' ' '\\n' | grep -Fxq "$group" || {
+                echo "Error: falló la asignación de grupo $group." >&2; exit 1
+            }
+            echo "Xorg: cerrá la sesión y volvé a ingresar para aplicar $group."
+        fi
+    done
+fi
+echo 'Xorg: preparación completada.'
