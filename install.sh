@@ -109,6 +109,7 @@ if [ "$want_dshortcuts" -eq 1 ]; then
     selected="$selected,shortcuts"
 fi
 
+. "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/dshortcuts-deps.sh"
 packages='fish git'
 if [ "$ID" = alpine ]; then
     if [ "$want_rotate" -eq 1 ]; then packages="$packages xrandr xinput"
@@ -118,11 +119,7 @@ else
     elif [ "$want_brightness" -eq 1 ]; then packages="$packages x11-xserver-utils"; fi
 fi
 if [ "$want_dshortcuts" -eq 1 ]; then
-    if [ "$ID" = alpine ]; then
-        packages="$packages build-base patch libx11-dev libxft-dev libxinerama-dev libxext-dev fontconfig-dev freetype-dev"
-    else
-        packages="$packages build-essential patch libx11-dev libxft-dev libxinerama-dev libxext-dev libfontconfig1-dev libfreetype-dev"
-    fi
+    packages="$packages $(dshortcuts_packages "$ID")"
 fi
 echo "Sistema: $distro"
 echo "Módulos: $selected"
