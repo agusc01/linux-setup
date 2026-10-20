@@ -1,0 +1,18 @@
+--- a/dwm.c
++++ b/dwm.c
+@@ -697,4 +697,13 @@ clientmessage(XEvent *e)
+ 	} else if (cme->message_type == netatom[NetActiveWindow]) {
+-		if (c != selmon->sel && !c->isurgent)
+-			seturgent(c, 1);
++		/* linux-setup: rofi-window-focus - activar ventanas en cualquier tag. */
++		if (c->mon != selmon) {
++			unfocus(selmon->sel, 0);
++			selmon = c->mon;
++		}
++		if (!ISVISIBLE(c) && (c->tags & TAGMASK)) {
++			const Arg a = { .ui = c->tags & TAGMASK };
++			view(&a);
++		}
++		focus(c);
++		restack(selmon);
+ 	}
