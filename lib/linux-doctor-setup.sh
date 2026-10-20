@@ -2,19 +2,38 @@
 # linux-doctor opcional, sin permisos de root ni modificaciones del checkout existente.
 set -eu
 doctor_dir="$HOME/.local/share/linux-setup/linux-doctor"
+mode=install
 case "$#" in
-    0) dry_run=0 ;;
-    1) [ "$1" = --dry-run ] || exit 2; dry_run=1 ;;
+    0) ;;
+    1) case "$1" in
+           --dry-run) mode=dry-run ;;
+           --update) mode=update ;;
+           *) exit 2 ;;
+       esac ;;
     *) exit 2 ;;
 esac
 echo 'Doctor: fuente https://github.com/agusc01/linux-doctor.git'
 echo "Doctor: destino $doctor_dir"
-if [ "$dry_run" -eq 1 ]; then
+if [ "$mode" = dry-run ]; then
     echo 'Doctor: simulación, sin cambios ni reparaciones.'
     exit 0
 fi
 [ "$(id -u)" -ne 0 ] || { echo 'Doctor: ejecutar como usuario normal.' >&2; exit 1; }
 command -v git >/dev/null 2>&1 || { echo 'Doctor: falta git.' >&2; exit 1; }
+if [ "$mode" = update ]; then
+    # Obtener código nuevo en una copia desechable, sin tocar el checkout actual.
+    # La instalación anterior y el launcher son verificados por el instalador
+    # de linux-doctor, que hace respaldo, staging y rollback ante errores.
+    work=$(mktemp -d)
+    trap 'rm -rf "$work"' EXIT HUP INT TERM
+    git clone --quiet --single-branch --branch main https://github.com/agusc01/linux-doctor.git "$work/linux-doctor"
+    [ -f "$work/linux-doctor/install.sh" ] || {
+        echo 'Doctor: el repositorio descargado no contiene install.sh.' >&2; exit 1
+    }
+    sh "$work/linux-doctor/install.sh" --update
+    echo 'Doctor: actualizado sin modificar el checkout original.'
+    exit 0
+fi
 if [ -L "$doctor_dir" ]; then
     echo 'Doctor: no se modifican directorios enlazados.' >&2; exit 1
 fi

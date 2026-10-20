@@ -9,11 +9,14 @@ El repositorio independiente [linux-doctor](https://github.com/agusc01/linux-doc
 ```sh
 sh install.sh --modules doctor --dry-run
 sh install.sh --modules doctor
+# Actualización explícita: no reinstala Fish ni otros módulos
+sh install.sh --modules doctor --update --dry-run
+sh install.sh --modules doctor --update
 ~/.local/bin/linux-doctor --verbose
 ~/.local/bin/linux-doctor --json
 ```
 
-`linux-setup` clona `linux-doctor` en `~/.local/share/linux-setup/linux-doctor` y llama a su instalador de usuario. No ejecuta diagnósticos automáticamente ni repara nada: la opción `--repair` de linux-doctor 0.1 solo imprime sugerencias. Si ya hay un launcher `~/.local/bin/linux-doctor`, se conserva. Si el checkout existe, se valida su origen y no se hace `git pull` implícito. Para actualizar el proyecto se requiere una acción explícita. Los módulos opcionales ausentes no se consideran errores.
+`linux-setup` clona `linux-doctor` en `~/.local/share/linux-setup/linux-doctor` y llama a su instalador de usuario. No ejecuta diagnósticos automáticamente ni repara nada: la opción `--repair` de linux-doctor 0.1 solo imprime sugerencias. Si ya hay un launcher `~/.local/bin/linux-doctor`, se conserva. Si el checkout existe, se valida su origen y no se hace `git pull` implícito. La opción `--update` descarga una revisión nueva a un directorio temporal, preserva la instalación y archivos adicionales, crea un backup antes de reemplazarla y restaura la anterior si falla la instalación. El checkout original no se modifica. Los módulos opcionales ausentes no se consideran errores.
 
 ## Preparación inicial de Alpine y Debian
 
