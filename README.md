@@ -4,9 +4,9 @@ Instalador de arranque para **Alpine Linux y Debian/Ubuntu**, con **Fish obligat
 
 ## Preparación inicial de Alpine y Debian
 
-**Guía completa:** [Crear el usuario, configurar doas y los repositorios](docs/primeros-pasos.md).
+**Guía completa:** [Preparar usuarios, privilegios administrativos y repositorios](docs/primeros-pasos.md).
 
-En Alpine, el grupo administrativo recomendado en esta guía es `wheel`, con configuración `/etc/doas.d/doas.conf`. En Debian es `sudo`, con `/etc/doas.conf`. Los repositorios son diferentes: `/etc/apk/repositories` (Alpine) frente a archivos APT (Debian). Usá la guía correspondiente antes de ejecutar `linux-setup` como usuario normal.
+En Alpine, la guía configura `doas` para el grupo `wheel` mediante `/etc/doas.d/doas.conf`. En Debian se utiliza `sudo` con el grupo `sudo`, sin instalar `doas` ni crear `/etc/doas.conf`. Los repositorios son diferentes: `/etc/apk/repositories` (Alpine) frente a archivos APT (Debian). Usá la guía correspondiente antes de ejecutar `linux-setup` como usuario normal.
 
 El instalador instala automáticamente `whereis` mediante `util-linux-misc` en Alpine y `util-linux` en Debian/Ubuntu. Al finalizar crea `~/.config/fish/conf.d/linux-setup-path.fish` con `fish_add_path /sbin /usr/sbin`, sin alterar otras configuraciones Fish.
 
