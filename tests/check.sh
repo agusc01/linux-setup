@@ -5,6 +5,12 @@ root=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 sh -n "$root/install.sh"
 sh -n "$root/lib/dshortcuts-setup.sh"
 sh -n "$root/lib/dshortcuts-deps.sh"
+sh -n "$root/lib/dwm-rofi-setup.sh"
+grep -Fq 'master->next = NULL' "$root/profiles/dshortcuts/safe.patch"
+grep -Fq 'c = MAX(1, c)' "$root/profiles/dshortcuts/safe.patch"
+grep -Fq 'view(&a)' "$root/profiles/dwm/rofi-window-focus.patch"
+grep -Fq 'focus(c)' "$root/profiles/dwm/rofi-window-focus.patch"
+
 "$root/lib/dshortcuts-setup.sh" --dry-run | grep -q 'fork agusc01/dshortcuts'
 "$root/lib/dshortcuts-setup.sh" --dry-run | grep -q 'Paquetes gestionados automáticamente'
 test -f "$root/profiles/dshortcuts/config.h"
