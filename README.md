@@ -2,6 +2,19 @@
 
 Instalador de arranque para **Alpine Linux y Debian/Ubuntu**, con **Fish obligatorio** y módulos independientes de [linux-tools](https://github.com/agusc01/linux-tools).
 
+## Diagnóstico opcional con linux-doctor
+
+El repositorio independiente [linux-doctor](https://github.com/agusc01/linux-doctor) puede instalarse desde el selector (opción **doctor**) o con `sh install.sh --modules doctor`. No requiere Xorg, Fish en ejecución ni permisos root propios; la instalación general de `linux-setup` sigue preparando Fish como dependencia habitual.
+
+```sh
+sh install.sh --modules doctor --dry-run
+sh install.sh --modules doctor
+~/.local/bin/linux-doctor --verbose
+~/.local/bin/linux-doctor --json
+```
+
+`linux-setup` clona `linux-doctor` en `~/.local/share/linux-setup/linux-doctor` y llama a su instalador de usuario. No ejecuta diagnósticos automáticamente ni repara nada: la opción `--repair` de linux-doctor 0.1 solo imprime sugerencias. Si ya hay un launcher `~/.local/bin/linux-doctor`, se conserva. Si el checkout existe, se valida su origen y no se hace `git pull` implícito. Para actualizar el proyecto se requiere una acción explícita. Los módulos opcionales ausentes no se consideran errores.
+
 ## Primer arranque
 
 Desde una Alpine **recién instalada**, necesitás `git` para poder clonar el instalador. Si todavía no existe, ejecutá como root `su -`, luego `apk add git` y finalmente `exit`. El instalador instalará Fish y el resto, sin necesidad de root permanente.

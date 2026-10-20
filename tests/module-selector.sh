@@ -26,6 +26,8 @@ out=$(MOCK_SELECTION='wifi st bluetooth' sh "$selector" --dialog)
 test "$out" = 'fish,wifi,bluetooth,st'
 out=$(MOCK_SELECTION='' sh "$selector" --dialog)
 test "$out" = 'fish,rotate,audio,brightness'
+out=$(MOCK_SELECTION='doctor' sh "$selector" --dialog)
+test "$out" = 'fish,doctor'
 out=$(MOCK_SELECTION='slock' sh "$selector" --auto)
 test "$out" = 'fish,slock'
 
@@ -45,9 +47,11 @@ test ! -s "$tmp/result"
 
 out=$(printf '1,7,10\n' | sh "$selector" --text)
 test "$out" = 'fish,rotate,dshortcuts,slock'
+out=$(printf '11\n' | sh "$selector" --text)
+test "$out" = 'fish,doctor'
 out=$(printf '\n' | sh "$selector" --text)
 test "$out" = 'fish,rotate,audio,brightness'
-if printf '1,11\n' | sh "$selector" --text > "$tmp/result" 2> "$tmp/error"; then
+if printf '1,12\n' | sh "$selector" --text > "$tmp/result" 2> "$tmp/error"; then
     echo 'FALLO: el selector numérico aceptó opción inválida.' >&2; exit 1
 fi
 test ! -s "$tmp/result"
@@ -65,6 +69,9 @@ MOCK_SELECTION='st wifi' LINUX_SETUP_OS_RELEASE="$tmp/os-release" \
 grep -Fxq 'Módulos: fish,wifi' "$tmp/result"
 grep -Fxq 'Suckless: st (módulos independientes; sin reemplazos automáticos).' "$tmp/result"
 grep -Fq 'Simulación: no se instalaron paquetes' "$tmp/result"
+MOCK_SELECTION='doctor' LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --menu --dry-run > "$tmp/result"
+grep -Fq 'Módulo adicional: linux-doctor' "$tmp/result"
+grep -Fq 'Doctor: simulación' "$tmp/result"
 MOCK_CANCEL=1 LINUX_SETUP_OS_RELEASE="$tmp/os-release" \
     sh "$root/install.sh" --menu --dry-run > "$tmp/result"
 grep -Fxq 'Selección cancelada: no se modificó nada.' "$tmp/result"
