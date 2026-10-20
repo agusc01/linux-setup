@@ -1,6 +1,13 @@
 --- a/dshortcuts.c
 +++ b/dshortcuts.c
-@@ -84,8 +84,8 @@
+@@ -114,5 +114,6 @@ calccolumns(item* _parent, int l) {
+     int cw = calccolumnwidth(_parent, l); /* sets columnwidth */
+     int c = (mw - 2 * outpaddingvert) / cw;
+ 
++    c = MAX(1, c); /* no dividir por cero si una opción es más ancha que el menú */
+     return (c < columns || columns == 0) ? c : columns;
+ }
+@@ -133,8 +134,8 @@
  static int
  max_textw(void)
  {
@@ -10,13 +17,6 @@
 +	for (size_t i = 0; i < LENGTH(items); i++)
 +		len = MAX(TEXTW(items[i].text), len);
  	return len;
- }
-@@ -114,5 +114,6 @@ calccolumns(item* _parent, int l) {
-     int cw = calccolumnwidth(_parent, l); /* sets columnwidth */
-     int c = (mw - 2 * outpaddingvert) / cw;
- 
-+    c = MAX(1, c); /* no dividir por cero si una opción es más ancha que el menú */
-     return (c < columns || columns == 0) ? c : columns;
  }
 @@ -149,8 +150,9 @@ push(item *it) {
      if (!itstack) {
