@@ -146,6 +146,12 @@ fi
 
 . "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/dshortcuts-deps.sh"
 packages='fish git'
+# whereis: util-linux-misc en Alpine, util-linux en Debian/Ubuntu.
+if [ "$ID" = alpine ]; then
+    packages="$packages util-linux-misc"
+else
+    packages="$packages util-linux"
+fi
 if [ "$need_dialog_install" -eq 1 ]; then
     packages="$packages dialog"
 fi
@@ -242,5 +248,19 @@ if [ "$want_dshortcuts" -eq 1 ]; then
     else
         sh "$setup_root/lib/dshortcuts-setup.sh"
     fi
+fi
+# Respaldo del PATH administrativo para Fish, sin alterar variables globales.
+# Sólo gestionamos el archivo propio; no sobrescribimos configuraciones ajenas.
+fish_conf_dir="$HOME/.config/fish/conf.d"
+fish_conf="$fish_conf_dir/linux-setup-path.fish"
+fish_expected='# linux-setup-managed: agusc01/linux-setup'
+if [ -f "$fish_conf" ] && ! grep -Fxq "$fish_expected" "$fish_conf"; then
+    echo "Aviso: se conserva $fish_conf porque no pertenece a linux-setup." >&2
+elif [ -L "$fish_conf" ] || { [ -e "$fish_conf" ] && [ ! -f "$fish_conf" ]; }; then
+    echo "Aviso: no se modifica una ruta Fish no regular: $fish_conf" >&2
+else
+    mkdir -p "$fish_conf_dir"
+    printf '%s\\n' "$fish_expected" 'fish_add_path /sbin /usr/sbin' > "$fish_conf"
+    echo 'Fish: /sbin y /usr/sbin quedan disponibles en nuevas sesiones.'
 fi
 echo 'Instalación finalizada. Si acabás de instalar sof-firmware, reiniciá y probá aplay -l.'
