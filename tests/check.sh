@@ -4,7 +4,9 @@ set -eu
 root=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 sh -n "$root/install.sh"
 sh -n "$root/lib/dshortcuts-setup.sh"
+sh -n "$root/lib/dshortcuts-deps.sh"
 "$root/lib/dshortcuts-setup.sh" --dry-run | grep -q 'fork agusc01/dshortcuts'
+"$root/lib/dshortcuts-setup.sh" --dry-run | grep -q 'Paquetes gestionados automáticamente'
 test -f "$root/profiles/dshortcuts/config.h"
 test -f "$root/profiles/dshortcuts/items.h"
 if grep -Fq '.bash_scripts/' "$root/profiles/dshortcuts/items.h"; then
@@ -13,6 +15,29 @@ fi
 sh -n "$root/tests/check.sh"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+
+# Una ejecución directa de lib/dshortcuts-setup.sh instala el paquete que falte,
+# sin pedirle al usuario que lo instale por separado.
+. "$root/lib/dshortcuts-deps.sh"
+test "$(dshortcuts_packages alpine)" = 'build-base patch libx11-dev libxft-dev libxinerama-dev libxext-dev fontconfig-dev freetype-dev'
+test "$(dshortcuts_packages debian)" = 'build-essential patch libx11-dev libxft-dev libxinerama-dev libxext-dev libfontconfig1-dev libfreetype-dev'
+(
+    dshortcuts_package_installed() {
+        [ "$2" != patch ] || [ -f "$tmp/patch-installed" ]
+    }
+    dshortcuts_install_packages() {
+        [ "$1" = alpine ] && [ "$2" = patch ] && [ "$#" -eq 2 ] || return 1
+        : > "$tmp/patch-installed"
+    }
+    dshortcuts_ensure_dependencies alpine
+) > "$tmp/deps-result"
+test -f "$tmp/patch-installed"
+grep -Fq 'Instalando dependencias faltantes de dshortcuts: patch' "$tmp/deps-result"
+(
+    dshortcuts_package_installed() { return 0; }
+    dshortcuts_install_packages() { echo 'FALLO: instaló paquetes innecesarios.' >&2; return 1; }
+    dshortcuts_ensure_dependencies alpine
+) | grep -Fq 'Dependencias de dshortcuts: ya instaladas.'
 
 printf 'ID=alpine\nVERSION_ID=3.24.2\n' > "$tmp/os-release"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules audio,rotate --dry-run > "$tmp/result"
@@ -45,4 +70,4 @@ if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules noex
     echo 'FALLO: se aceptó un módulo desconocido.' >&2
     exit 1
 fi
-echo 'OK: Alpine/Debian, Fish obligatorio, Wi-Fi/Bluetooth/Rofi/dshortcuts opcionales, dry-run sin efectos.'
+echo 'OK: Alpine/Debian, Fish obligatorio, dependencias dshortcuts automáticas, dry-run sin efectos.'
