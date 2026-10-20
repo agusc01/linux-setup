@@ -6,6 +6,7 @@ sh -n "$root/install.sh"
 sh -n "$root/lib/dshortcuts-setup.sh"
 sh -n "$root/lib/dshortcuts-deps.sh"
 sh -n "$root/lib/dwm-rofi-setup.sh"
+sh -n "$root/lib/suckless-setup.sh"
 grep -Fq 'master->next = NULL' "$root/profiles/dshortcuts/safe.patch"
 grep -Fq 'c = MAX(1, c)' "$root/profiles/dshortcuts/safe.patch"
 grep -Fq 'view(&a)' "$root/profiles/dwm/rofi-window-focus.patch"
@@ -60,6 +61,14 @@ LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules dshortc
 grep -Fxq 'Módulos: fish,rotate,audio,brightness,wifi,bluetooth,rofi,shortcuts' "$tmp/result"
 grep -q 'build-base patch libx11-dev' "$tmp/result"
 
+LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules dwm,st,slock --dry-run > "$tmp/result"
+grep -Fxq 'Suckless: dwm,st,slock' "$tmp/result"
+grep -Fq 'imlib2-dev se instala desde community temporal' "$tmp/result"
+grep -Fq 'ATENCIÓN: slock usa setuid-root' "$tmp/result"
+grep -Fq 'Simulación: no se instalaron paquetes' "$tmp/result"
+LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/lib/suckless-setup.sh" --modules st --build-only --dry-run > "$tmp/result"
+grep -Fq 'Modo compilación:' "$tmp/result"
+
 printf 'ID=debian\nVERSION_ID=13\n' > "$tmp/os-release"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules brightness --dry-run > "$tmp/result"
 grep -Fq 'Sistema: Debian/Ubuntu' "$tmp/result"
@@ -71,9 +80,21 @@ grep -Fxq 'Módulos: fish,rofi' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules dshortcuts --dry-run > "$tmp/result"
 grep -Fxq 'Módulos: fish,rotate,audio,brightness,wifi,bluetooth,rofi,shortcuts' "$tmp/result"
 grep -q 'build-essential patch libx11-dev' "$tmp/result"
+LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules dwm,st,slock --dry-run > "$tmp/result"
+grep -Fq 'libimlib2-dev' "$tmp/result"
+grep -Fq 'ncurses-bin' "$tmp/result"
+grep -Fq 'libxrandr-dev' "$tmp/result"
 
 if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules noexiste --dry-run >/dev/null 2>&1; then
     echo 'FALLO: se aceptó un módulo desconocido.' >&2
     exit 1
 fi
-echo 'OK: Alpine/Debian, Fish obligatorio, dependencias dshortcuts automáticas, dry-run sin efectos.'
+if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/lib/suckless-setup.sh" --modules st,st --dry-run >/dev/null 2>&1; then
+    echo 'FALLO: suckless aceptó un módulo repetido.' >&2
+    exit 1
+fi
+if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/lib/suckless-setup.sh" --modules dwm,st --source /tmp --dry-run >/dev/null 2>&1; then
+    echo 'FALLO: suckless permitió usar un solo --source para múltiples módulos.' >&2
+    exit 1
+fi
+echo 'OK: Alpine/Debian, Fish obligatorio, dependencias automáticas y módulos dwm/st/slock seguros.'
