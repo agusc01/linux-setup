@@ -15,6 +15,14 @@ sh install.sh --modules doctor
 
 `linux-setup` clona `linux-doctor` en `~/.local/share/linux-setup/linux-doctor` y llama a su instalador de usuario. No ejecuta diagnósticos automáticamente ni repara nada: la opción `--repair` de linux-doctor 0.1 solo imprime sugerencias. Si ya hay un launcher `~/.local/bin/linux-doctor`, se conserva. Si el checkout existe, se valida su origen y no se hace `git pull` implícito. Para actualizar el proyecto se requiere una acción explícita. Los módulos opcionales ausentes no se consideran errores.
 
+## Preparación inicial de Alpine y Debian
+
+**[Guía completa: usuarios, permisos administrativos y repositorios](docs/primeros-pasos.md)**
+
+Alpine: `doas` y grupo `wheel`. Debian/Ubuntu: `sudo` y grupo `sudo`. En cada distribución se utiliza su gestor de paquetes y fuentes oficiales.
+
+El instalador proporciona automáticamente `whereis` mediante `util-linux-misc` en Alpine o `util-linux` en Debian/Ubuntu. Al finalizar administra `~/.config/fish/conf.d/linux-setup-path.fish` con `fish_add_path /sbin /usr/sbin` sin sobrescribir archivos ajenos.
+
 ## Primer arranque
 
 Desde una Alpine **recién instalada**, necesitás `git` para poder clonar el instalador. Si todavía no existe, ejecutá como root `su -`, luego `apk add git` y finalmente `exit`. El instalador instalará Fish y el resto, sin necesidad de root permanente.
