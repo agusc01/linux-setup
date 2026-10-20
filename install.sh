@@ -254,10 +254,10 @@ fi
 fish_conf_dir="$HOME/.config/fish/conf.d"
 fish_conf="$fish_conf_dir/linux-setup-path.fish"
 fish_expected='# linux-setup-managed: agusc01/linux-setup'
-if [ -f "$fish_conf" ] && ! grep -Fxq "$fish_expected" "$fish_conf"; then
-    echo "Aviso: se conserva $fish_conf porque no pertenece a linux-setup." >&2
-elif [ -L "$fish_conf" ] || { [ -e "$fish_conf" ] && [ ! -f "$fish_conf" ]; }; then
+if [ -L "$fish_conf" ] || { [ -e "$fish_conf" ] && [ ! -f "$fish_conf" ]; }; then
     echo "Aviso: no se modifica una ruta Fish no regular: $fish_conf" >&2
+elif [ -f "$fish_conf" ] && ! grep -Fxq "$fish_expected" "$fish_conf"; then
+    echo "Aviso: se conserva $fish_conf porque no pertenece a linux-setup." >&2
 else
     mkdir -p "$fish_conf_dir"
     printf '%s\\n' "$fish_expected" 'fish_add_path /sbin /usr/sbin' > "$fish_conf"
