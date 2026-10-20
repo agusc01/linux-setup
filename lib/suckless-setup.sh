@@ -62,11 +62,11 @@ revision() {
 }
 packages_for() {
     case "$ID:$1" in
-        alpine:dwm) echo 'git build-base pkgconf libx11-dev libxft-dev libxinerama-dev libxrender-dev libxcomposite-dev libxext-dev fontconfig-dev freetype-dev xorg-server xinit' ;;
-        alpine:st) echo 'git build-base pkgconf libx11-dev libxft-dev fontconfig-dev freetype-dev ncurses' ;;
+        alpine:dwm) echo 'git build-base pkgconf libx11-dev libxft-dev libxinerama-dev libxrender-dev libxcomposite-dev libxext-dev fontconfig-dev freetype-dev font-dejavu xorg-server xinit' ;;
+        alpine:st) echo 'git build-base pkgconf libx11-dev libxft-dev fontconfig-dev freetype-dev font-dejavu ncurses' ;;
         alpine:slock) echo 'git build-base linux-headers libx11-dev libxext-dev libxrandr-dev' ;;
-        debian:dwm|ubuntu:dwm) echo 'git build-essential pkg-config libx11-dev libxft-dev libxinerama-dev libxrender-dev libxcomposite-dev libxext-dev libimlib2-dev libfontconfig1-dev libfreetype-dev xserver-xorg xinit' ;;
-        debian:st|ubuntu:st) echo 'git build-essential pkg-config libx11-dev libxft-dev libfontconfig1-dev libfreetype-dev ncurses-bin' ;;
+        debian:dwm|ubuntu:dwm) echo 'git build-essential pkg-config libx11-dev libxft-dev libxinerama-dev libxrender-dev libxcomposite-dev libxext-dev libimlib2-dev libfontconfig1-dev libfreetype-dev fonts-dejavu-core xserver-xorg xinit' ;;
+        debian:st|ubuntu:st) echo 'git build-essential pkg-config libx11-dev libxft-dev libfontconfig1-dev libfreetype-dev fonts-dejavu-core ncurses-bin' ;;
         debian:slock|ubuntu:slock) echo 'git build-essential libx11-dev libxext-dev libxrandr-dev' ;;
     esac
 }
@@ -188,6 +188,15 @@ for name in $to_install; do
                 exit 1
             }
         fi
+    fi
+    # Fuente garantizada en instalaciones mínimas: no modificar forks ni fuentes locales.
+    # Tanto dwm (Ubuntu) como st (Liberation Mono) usan DejaVu empaquetada.
+    if [ -z "$source_dir" ]; then
+        for config in "$work/$name/config.def.h" "$work/$name/config.h"; do
+            if [ -f "$config" ]; then
+                sed -i 's/Ubuntu:size=/DejaVu Sans Mono:size=/g; s/Liberation Mono:/DejaVu Sans Mono:/g' "$config"
+            fi
+        done
     fi
     make -C "$work/$name" clean all
     [ -x "$work/$name/$name" ] || { echo "Falta el ejecutable compilado $name." >&2; exit 1; }
