@@ -86,6 +86,9 @@ if [ "$ID" = alpine ]; then
         echo 'Alpine: imlib2-dev se instala desde community temporal, sin cambiar /etc/apk/repositories.' ;;
     esac
 fi
+case ",$selected," in
+    *,dwm,*) sh "$root/lib/xorg-setup.sh" --dry-run ;;
+esac
 echo 'Fuentes oficiales: forks agusc01 fijados por commit; no se modifica el repositorio original.'
 if [ -n "$source_dir" ]; then echo "Fuente local (solo lectura): $source_dir"; fi
 if [ "$build_only" -eq 1 ]; then
@@ -127,6 +130,16 @@ if [ "$assume_yes" -eq 0 ]; then
     IFS= read -r answer || answer=''
     case "$answer" in s|S|si|SI|Si) ;; *) echo 'Cancelado.'; exit 2 ;; esac
 fi
+
+# Preparar el servidor gráfico antes de compilar dwm. En modo build-only no
+# se modifican dispositivos ni servicios; la integración es solo instalación.
+case " $to_install " in
+    *" dwm "*|"dwm "*|*" dwm"|"dwm")
+        if [ "$build_only" -eq 0 ]; then
+            sh "$root/lib/xorg-setup.sh"
+        fi
+        ;;
+esac
 
 # Los paquetes son una lista fija por distro/módulo; elevación limitada a apk/apt-get.
 needed=''
