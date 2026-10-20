@@ -10,7 +10,7 @@ release=/etc/os-release
 
 usage() {
     printf '%s\n' \
-        'Uso: sh install.sh [--modules fish,rotate,audio,brightness,wifi,bluetooth,rofi,dshortcuts] [--dry-run] [--yes] [--tools-dir RUTA]' \
+        'Uso: sh install.sh [--modules fish,rotate,audio,brightness,wifi,bluetooth,rofi,dshortcuts,dwm,st,slock] [--dry-run] [--yes] [--tools-dir RUTA]' \
         'Fish es obligatorio; los módulos opcionales se delegan a linux-tools.' \
         'No instala ni configura doas. Acepta doas/sudo/su ya disponibles.'
 }
@@ -56,7 +56,7 @@ if [ -z "$modules" ]; then
     modules=fish,rotate,audio,brightness
     if [ -t 0 ] && [ "$assume_yes" -eq 0 ] && [ "$dry_run" -eq 0 ]; then
         echo 'Seleccioná los módulos (separados por coma):'
-        echo 'fish [obligatorio], rotate [pantalla táctil X11], audio, brightness [X11], wifi, bluetooth, rofi, dshortcuts'
+        echo 'fish [obligatorio], rotate [pantalla táctil X11], audio, brightness [X11], wifi, bluetooth, rofi, dshortcuts, dwm, st, slock'
         printf 'Módulos [fish,rotate,audio,brightness]: '
         IFS= read -r reply || reply=''
         if [ -n "$reply" ]; then modules=$reply; fi
@@ -70,6 +70,9 @@ want_wifi=0
 want_bluetooth=0
 want_rofi=0
 want_dshortcuts=0
+want_dwm=0
+want_st=0
+want_slock=0
 while [ -n "$requested" ]; do
     case "$requested" in
         *,*) item=${requested%%,*}; requested=${requested#*,} ;;
@@ -84,6 +87,9 @@ while [ -n "$requested" ]; do
         bluetooth) want_bluetooth=1 ;;
         rofi) want_rofi=1 ;;
         dshortcuts) want_dshortcuts=1 ;;
+        dwm) want_dwm=1 ;;
+        st) want_st=1 ;;
+        slock) want_slock=1 ;;
         *) echo "Módulo no disponible: $item" >&2; exit 2 ;;
     esac
 done
@@ -108,6 +114,14 @@ selected=fish
 if [ "$want_dshortcuts" -eq 1 ]; then
     selected="$selected,shortcuts"
 fi
+suckless_selected=''
+[ "$want_dwm" -eq 0 ] || suckless_selected=dwm
+if [ "$want_st" -eq 1 ]; then
+    if [ -z "$suckless_selected" ]; then suckless_selected=st; else suckless_selected="$suckless_selected,st"; fi
+fi
+if [ "$want_slock" -eq 1 ]; then
+    if [ -z "$suckless_selected" ]; then suckless_selected=slock; else suckless_selected="$suckless_selected,slock"; fi
+fi
 
 . "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/dshortcuts-deps.sh"
 packages='fish git'
@@ -129,6 +143,10 @@ echo 'Audio, Wi-Fi, Bluetooth y Rofi se delegan a linux-tools; no se sustituyen 
 if [ "$want_dshortcuts" -eq 1 ]; then
     echo 'dshortcuts: se compilará una copia temporal del fork, no se modificarán sus fuentes originales.'
     sh "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/dshortcuts-setup.sh" --dry-run
+fi
+if [ -n "$suckless_selected" ]; then
+    echo "Suckless: $suckless_selected (módulos independientes; sin reemplazos automáticos)."
+    sh "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/suckless-setup.sh" --modules "$suckless_selected" --dry-run
 fi
 
 if [ "$dry_run" -eq 1 ]; then
@@ -184,6 +202,14 @@ if [ "$assume_yes" -eq 1 ]; then
     sh "$tools_dir/install.sh" --modules "$selected" --yes
 else
     sh "$tools_dir/install.sh" --modules "$selected"
+fi
+if [ -n "$suckless_selected" ]; then
+    setup_root=$(CDPATH= cd "$(dirname "$0")" && pwd)
+    if [ "$assume_yes" -eq 1 ]; then
+        sh "$setup_root/lib/suckless-setup.sh" --modules "$suckless_selected" --yes
+    else
+        sh "$setup_root/lib/suckless-setup.sh" --modules "$suckless_selected"
+    fi
 fi
 if [ "$want_dshortcuts" -eq 1 ]; then
     setup_root=$(CDPATH= cd "$(dirname "$0")" && pwd)
