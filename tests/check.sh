@@ -5,6 +5,7 @@ root=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 printf "\n%s\n%s\n" "LINUX-SETUP | PRUEBAS AUTOMÁTICAS" "===================================="
 echo "Estas pruebas son simulaciones: no requieren ingresar números ni instalan paquetes."
 echo
+stage="Sintaxis POSIX"
 echo "[1/5] Validando sintaxis de scripts..." 
 sh -n "$root/install.sh"
 sh -n "$root/lib/dshortcuts-setup.sh"
@@ -16,9 +17,11 @@ sh -n "$root/lib/linux-doctor-setup.sh"
 sh -n "$root/tests/module-selector.sh"
 echo "      [OK] Sintaxis POSIX de instaladores y pruebas."
 echo
+stage="Selector de módulos"
 printf "%s\n" "[2/5] Probando selectores (entradas simuladas)..." 
 sh "$root/tests/module-selector.sh"
 echo
+stage="Integraciones y dependencias"
 printf "%s\n" "[3/5] Revisando integraciones y dependencias..." 
 grep -Fq 'master->next = NULL' "$root/profiles/dshortcuts/safe.patch"
 grep -Fq 'c = MAX(1, c)' "$root/profiles/dshortcuts/safe.patch"
@@ -34,7 +37,16 @@ if grep -Fq '.bash_scripts/' "$root/profiles/dshortcuts/items.h"; then
 fi
 sh -n "$root/tests/check.sh"
 tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+# Si cualquier test falla, indicar la etapa y conservar el código de error.
+finish() {
+    code=$?
+    rm -rf "$tmp"
+    if [ "$code" -ne 0 ]; then
+        printf '\\n[ERROR] Falló la etapa: %s (código %s).\\n' "$stage" "$code" >&2
+    fi
+}
+trap finish EXIT
+trap 'exit 130' HUP INT TERM
 
 # Una ejecución directa de lib/dshortcuts-setup.sh instala el paquete que falte,
 # sin pedirle al usuario que lo instale por separado.
@@ -61,6 +73,7 @@ grep -Fq 'Instalando dependencias faltantes de dshortcuts: patch' "$tmp/deps-res
 
 echo '      [OK] Parches, plantillas y dependencias de dshortcuts.'
 echo
+stage='Instalación Alpine'
 printf '%s\n' '[4/5] Simulando instalación en Alpine...' 
 printf 'ID=alpine\nVERSION_ID=3.24.2\n' > "$tmp/os-release"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules audio,rotate --dry-run > "$tmp/result"
@@ -97,6 +110,7 @@ sh "$root/lib/linux-doctor-setup.sh" --dry-run | grep -Fq 'sin cambios ni repara
 
 echo '      [OK] Alpine: módulos, fuentes, whereis y linux-doctor.'
 echo
+stage='Instalación Debian'
 printf '%s\n' '[5/5] Simulando instalación en Debian...' 
 printf 'ID=debian\nVERSION_ID=13\n' > "$tmp/os-release"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules doctor --dry-run > "$tmp/result"
