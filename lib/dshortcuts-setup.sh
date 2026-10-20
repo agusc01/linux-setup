@@ -3,6 +3,7 @@
 # Compilar una copia FIEL y fijada del fork. No modifica el repositorio original.
 set -eu
 root=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
+. "$root/lib/dshortcuts-deps.sh"
 version=2f29a3dffa606f8823d80a6a7ff381ff0a1b1ab6
 source_dir=''
 dry_run=0
@@ -50,16 +51,12 @@ echo 'Menú C moderno: volumen, brillo, rotación, Wi-Fi, Bluetooth y Rofi.'
 echo "Launcher: $launcher | compilado: $binary"
 echo 'No se cambian el fork, keys.h de dwm ni las configuraciones privadas.'
 if [ "$dry_run" -eq 1 ]; then
+    . /etc/os-release
+    printf 'Paquetes gestionados automáticamente (%s): git %s\n' "$ID" "$(dshortcuts_packages "$ID")"
     echo 'Simulación: compilaría con overlays locales y verificaría dshortcuts -v.'
     exit 0
 fi
 [ "$(id -u)" -ne 0 ] || { echo 'Error: ejecutá como usuario normal.' >&2; exit 1; }
-for cmd in git make cc patch; do
-    command -v "$cmd" >/dev/null 2>&1 || {
-        echo "Error: falta $cmd. Instalá las dependencias dshortcuts con linux-setup." >&2
-        exit 1
-    }
-done
 if [ -e "$launcher" ] || [ -L "$launcher" ]; then
     managed_launcher || {
         echo "Conflicto: $launcher no fue creado por linux-setup. No se sobrescribe." >&2
@@ -81,6 +78,18 @@ if [ "$yes" -eq 0 ]; then
     IFS= read -r ans || ans=''
     case "$ans" in s|S|si|Si|SI) : ;; *) echo 'Cancelado.'; exit 2 ;; esac
 fi
+
+# El script también se puede ejecutar directamente: resolver dependencias antes de compilar.
+[ -r /etc/os-release ] || { echo 'Error: no se encontró /etc/os-release.' >&2; exit 1; }
+. /etc/os-release
+dshortcuts_ensure_dependencies "$ID"
+for cmd in git make cc patch; do
+    command -v "$cmd" >/dev/null 2>&1 || {
+        echo "Error: $cmd sigue sin estar disponible tras instalar las dependencias." >&2
+        exit 1
+    }
+done
+
 temp=$(mktemp -d)
 trap 'rm -rf "$temp"' EXIT HUP INT TERM
 work="$temp/dshortcuts"
