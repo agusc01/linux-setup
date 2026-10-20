@@ -181,9 +181,9 @@ grep -Fq "permit persist :wheel" "$root/bootstrap.sh"
 grep -Fq 'fish -c' "$root/install.sh"
 grep -Fq 'linux-setup-path.fish' "$root/install.sh"
 test -f "$root/docs/primeros-pasos.md"
-grep -Fq 'permit :wheel' "$root/docs/primeros-pasos.md"
-grep -Fq 'apt install sudo git' "$root/docs/primeros-pasos.md"
-grep -Fq 'sudo apt update' "$root/docs/primeros-pasos.md"
+grep -Fq 'doas id -u' "$root/docs/primeros-pasos.md"
+grep -Fq 'apt-get install -y sudo git' "$root/docs/primeros-pasos.md"
+grep -Fq 'sudo id -u' "$root/docs/primeros-pasos.md"
 if grep -Fq 'apt install doas' "$root/docs/primeros-pasos.md"; then
     echo 'FALLO: no se debe recomendar doas en Debian.' >&2
     exit 1
