@@ -218,6 +218,13 @@ for name in $to_install; do
     fi
     install_exe=$(command -v install) || { echo 'Falta install.' >&2; exit 1; }
     if [ "$name" = slock ]; then
+        # No generar un lock inaccesible: el fork desciende a nobody:nogroup.
+        id nobody >/dev/null 2>&1 || {
+            echo 'Error: falta la cuenta nobody; slock no se instalará.' >&2; exit 1
+        }
+        getent group nogroup >/dev/null 2>&1 || {
+            echo 'Error: falta el grupo nogroup; slock no se instalará.' >&2; exit 1
+        }
         # Propietario root y setuid son necesarios para leer el hash local.
         dshortcuts_as_root "$install_exe" -o root -g root -m 4755 "$work/slock/slock" "$target"
         dshortcuts_as_root chmod 4755 "$target"
@@ -227,4 +234,14 @@ for name in $to_install; do
     fi
     echo "Instalado: $target"
 done
-echo 'Instalación finalizada. No se cerró la sesión X11 ni se cambió ~/.xinitrc.'
+case " $to_install " in
+    *" dwm "*|"dwm "*|*" dwm"|"dwm")
+        if [ ! -e "$HOME/.xinitrc" ] && [ ! -L "$HOME/.xinitrc" ]; then
+            printf '%s\n' '#!/bin/sh' 'PATH="$HOME/.local/bin:$PATH"' 'export PATH' 'exec /usr/local/bin/dwm' > "$HOME/.xinitrc"
+            chmod 644 "$HOME/.xinitrc"
+            echo 'Creado ~/.xinitrc para startx (no existía).'
+        else
+            echo 'La configuración ~/.xinitrc existente se conservó sin cambios.'
+        fi ;;
+esac
+echo 'Instalación finalizada. No se cerró ni reinició la sesión X11.'
