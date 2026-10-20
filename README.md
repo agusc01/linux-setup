@@ -18,33 +18,22 @@ sh install.sh --modules doctor --update
 
 `linux-setup` clona `linux-doctor` en `~/.local/share/linux-setup/linux-doctor` y llama a su instalador de usuario. No ejecuta diagnósticos automáticamente ni repara nada: la opción `--repair` de linux-doctor 0.1 solo imprime sugerencias. Si ya hay un launcher `~/.local/bin/linux-doctor`, se conserva. Si el checkout existe, se valida su origen y no se hace `git pull` implícito. La opción `--update` descarga una revisión nueva a un directorio temporal, preserva la instalación y archivos adicionales, crea un backup antes de reemplazarla y restaura la anterior si falla la instalación. El checkout original no se modifica. Los módulos opcionales ausentes no se consideran errores.
 
-## Preparación inicial de Alpine y Debian
+## Primer arranque automatizado (Alpine y Debian)
 
-**[Guía completa: usuarios, permisos administrativos y repositorios](docs/primeros-pasos.md)**
-
-Alpine: `doas` y grupo `wheel`. Debian/Ubuntu: `sudo` y grupo `sudo`. En cada distribución se utiliza su gestor de paquetes y fuentes oficiales.
-
-El instalador proporciona automáticamente `whereis` mediante `util-linux-misc` en Alpine o `util-linux` en Debian/Ubuntu. Al finalizar administra `~/.config/fish/conf.d/linux-setup-path.fish` con `fish_add_path /sbin /usr/sbin` sin sobrescribir archivos ajenos.
-
-## Preparación automática de Xorg al instalar dwm
-
-**Ya no hace falta ejecutar `doas setup-xorg-base` ni `sudo apt install xorg` a mano.** Al seleccionar `dwm`, `linux-setup` prepara el servidor gráfico antes de compilar el gestor de ventanas.
-
-- **Alpine:** usa el script oficial `setup-xorg-base`, que instala Xorg, xinit, libinput y Mesa y configura `eudev`. **Puede habilitar `community` en `/etc/apk/repositories` y reemplazar el gestor de dispositivos mdev por eudev.** Se anuncia en la simulación y requiere la confirmación habitual de instalación. Si los paquetes y la configuración ya están presentes, se omite.
-- **Debian/Ubuntu:** instala `xserver-xorg`, `xserver-xorg-input-libinput` y `xinit` mediante `apt-get` (sin configurar OpenRC).
-- **Permisos:** no agrega automáticamente al usuario a grupos sensibles como `input`, `video` o `audio`. Si el equipo requiere ajustes específicos, conviene diagnosticarlos primero; en Debian normalmente los permisos los gestiona logind.
+**[Guía paso a paso](docs/primeros-pasos.md)**. Después de instalar el sistema, como root descargá y ejecutá el asistente:
 
 ```sh
-sh install.sh --modules dwm,st,doctor --dry-run
-sh install.sh --modules dwm,st,doctor
-startx
+wget -O bootstrap.sh https://raw.githubusercontent.com/agusc01/linux-setup/main/bootstrap.sh
+sh bootstrap.sh
 ```
 
-La preparación de Xorg ocurre solamente al instalar `dwm` por primera vez (o reinstalarlo expresamente); `st` y `doctor` no la activan por sí solos. Un equipo ya configurado no necesita repetir `setup-xorg-base`. Las pruebas `--dry-run` y `--build-only` no modifican servicios ni repositorios.
+Te pide el nombre del usuario, valida o crea la cuenta y gestiona su contraseña durante la creación. En Alpine instala Git y `doas`, configura `wheel` y verifica `doas id -u`; en Debian instala Git y `sudo`, configura `sudo` y verifica `sudo id -u`. No es necesario introducir manualmente comandos de usuarios y permisos.
+
+Después entrá como el usuario normal y ejecutá `git clone https://github.com/agusc01/linux-setup.git`, `cd linux-setup` y `sh install.sh`. Al elegir `dwm`, Alpine configura también `input`, `video` y `audio` para ese usuario (cuando existen). Cerrá e iniciá sesión nuevamente si se agregaron grupos.
 
 ## Primer arranque
 
-Desde una Alpine **recién instalada**, necesitás `git` para poder clonar el instalador. Si todavía no existe, ejecutá como root `su -`, luego `apk add git` y finalmente `exit`. El instalador instalará Fish y el resto, sin necesidad de root permanente.
+Con `bootstrap.sh` completado y una sesión de usuario normal, Git ya está disponible y podés clonar el repositorio.
 
 Cloná este repositorio como usuario común:
 
@@ -55,7 +44,7 @@ sh install.sh --dry-run
 sh install.sh
 ```
 
-En modo interactivo muestra un checklist con `dialog`: Fish (obligatorio) más rotación, audio, brillo, Wi-Fi, Bluetooth, Rofi, dshortcuts, dwm, st y slock (siempre desmarcado por seguridad). Si `dialog` aún no existe, ofrece un selector de texto sin necesitar paquetes adicionales y, tras aprobar la instalación, agrega `dialog` para próximas ejecuciones. Sin interfaz interactiva, indicá `--modules fish,rotate,audio,brightness --yes`. Se confirma antes de instalar; no escribe configuraciones ajenas ni instala `doas`.
+En modo interactivo muestra un checklist con `dialog`: Fish (obligatorio) más rotación, audio, brillo, Wi-Fi, Bluetooth, Rofi, dshortcuts, dwm, st y slock (siempre desmarcado por seguridad). Si `dialog` aún no existe, ofrece un selector de texto sin necesitar paquetes adicionales y, tras aprobar la instalación, agrega `dialog` para próximas ejecuciones. Sin interfaz interactiva, indicá `--modules fish,rotate,audio,brightness --yes`. Se confirma antes de instalar; no escribe configuraciones ajenas; `doas` se configura durante el bootstrap inicial.
 
 Instala automáticamente Fish y Git mediante `apk` o `apt-get`, y las dependencias X11 (`xrandr`, `xinput`) solamente cuando se seleccionan rotación o brillo. Obtiene `linux-tools` desde GitHub y deja que ese proyecto instale y configure las funciones, audio, firmware y demás herramientas. Usa `doas`, `sudo` o `su` existentes solo para los paquetes. Nunca ejecuta todo el instalador como root.
 
