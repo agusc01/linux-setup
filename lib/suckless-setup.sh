@@ -193,6 +193,11 @@ for name in $to_install; do
     [ -x "$work/$name/$name" ] || { echo "Falta el ejecutable compilado $name." >&2; exit 1; }
 done
 
+if [ "$build_only" -eq 1 ]; then
+    echo 'OK: todos los módulos seleccionados compilaron; no se modificaron ejecutables.'
+    exit 0
+fi
+
 # Preparar terminfo antes de reemplazar st, para evitar dejar un st sin descripción de terminal.
 case " $to_install " in *" st "*|"st "*|*" st"|"st")
     command -v tic >/dev/null 2>&1 || { echo 'Falta tic para st (ncurses).' >&2; exit 1; }
@@ -201,11 +206,6 @@ case " $to_install " in *" st "*|"st "*|*" st"|"st")
     tic -sx -o "$HOME/.terminfo" "$work/st/st.info"
     ;;
 esac
-
-if [ "$build_only" -eq 1 ]; then
-    echo 'OK: todos los módulos seleccionados compilaron; no se modificaron ejecutables.'
-    exit 0
-fi
 
 backup_base="$HOME/.local/state/linux-setup/backups"
 for name in $to_install; do
