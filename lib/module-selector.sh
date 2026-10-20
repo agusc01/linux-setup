@@ -87,14 +87,21 @@ else
     done
 fi
 
-# Tanto la salida de dialog como la entrada manual se tratan como datos no confiables.
-# Rechazar tags inesperados, repetir módulos no tiene efectos secundarios.
+# Tanto la salida de dialog (separada por saltos de línea) como la entrada
+# manual son datos no confiables: validarlos y normalizarlos a espacios.
+# Sin esto, elegir más de un módulo podía omitir opciones intermedias.
+normalized=''
 for tag in $selection; do
     case "$tag" in
         rotate|audio|brightness|wifi|bluetooth|rofi|dshortcuts|dwm|st|slock) ;;
         *) echo "Selección no válida: $tag" >&2; exit 2 ;;
     esac
+    case " $normalized " in
+        *" $tag "*) : ;;
+        *) normalized="$normalized $tag" ;;
+    esac
 done
+selection=$normalized
 
 # Orden canónico para que install.sh no dependa del orden devuelto por dialog.
 modules=fish
