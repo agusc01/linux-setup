@@ -45,7 +45,7 @@ else
 fi
 test ! -s "$tmp/result"
 
-out=$(printf '1,7,10\n' | sh "$selector" --text)
+out=$(printf '1,7,10\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
 test "$out" = 'fish,rotate,dshortcuts,slock'
 # El menú textual debe imprimir todas las opciones sin intentar ejecutar
 # la frase de instrucciones como comando (regresión detectada en Alpine).
@@ -56,10 +56,10 @@ if grep -Eq 'not found|no encontrado|command not found' "$tmp/menu-stderr"; then
     echo 'FALLO: el texto de ayuda se ejecutó como comando.' >&2
     exit 1
 fi
-# También se comprueba la salida habitual sin desviar stderr.
-out=$(printf '11\n' | sh "$selector" --text)
+# También se comprueba la selección repetida, ocultando el menú simulado.
+out=$(printf '11\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
 test "$out" = 'fish,doctor'
-out=$(printf '\n' | sh "$selector" --text)
+out=$(printf '\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
 test "$out" = 'fish,rotate,audio,brightness'
 if printf '1,12\n' | sh "$selector" --text > "$tmp/result" 2> "$tmp/error"; then
     echo 'FALLO: el selector numérico aceptó opción inválida.' >&2; exit 1
@@ -91,4 +91,5 @@ if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" \
     --menu --modules wifi --dry-run >/dev/null 2>&1; then
     echo 'FALLO: --menu y --modules combinados.' >&2; exit 1
 fi
-echo 'OK: dialog y selector de texto, entradas validadas, cancelación y dry-run sin instalaciones.'
+echo '[OK] Selector: dialog, texto, entradas inválidas y cancelación.'
+echo '[OK] Integración: simulaciones de instalación sin cambios.'
