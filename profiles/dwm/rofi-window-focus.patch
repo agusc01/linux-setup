@@ -1,6 +1,6 @@
 --- a/dwm.c
 +++ b/dwm.c
-@@ -697,4 +697,16 @@ clientmessage(XEvent *e)
+@@ -697,4 +697,13 @@ clientmessage(XEvent *e)
  	} else if (cme->message_type == netatom[NetActiveWindow]) {
 -		if (c != selmon->sel && !c->isurgent)
 -			seturgent(c, 1);
