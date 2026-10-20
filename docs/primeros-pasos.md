@@ -2,7 +2,7 @@
 
 Esta guía cubre **lo que se realiza una sola vez como root**, antes de ejecutar el instalador `linux-setup` como usuario normal. Sustituí `USUARIO` por el nombre real de la cuenta y elegí **únicamente** la sección de tu distribución.
 
-> **Seguridad:** pertenecer a `wheel` o `sudo` con una regla `permit` concede privilegios administrativos. Nunca uses `nopass` en estas reglas; `doas` pedirá la contraseña del usuario. No ejecutes `linux-setup` completo como root y no sobrescribas archivos de configuración existentes sin inspeccionarlos.
+> **Seguridad:** en Alpine, la regla de `doas` para `wheel` concede privilegios administrativos; en Debian, los integrantes del grupo `sudo` pueden obtenerlos mediante `sudo` cuando la política del sistema lo permite. Usá autenticación con contraseña, evitá configurar `nopass` o `NOPASSWD` y no sobrescribas configuraciones existentes sin revisarlas. No ejecutes `linux-setup` completo como root.
 
 ## Alpine Linux
 
@@ -101,39 +101,41 @@ Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 
 No dupliques entradas si ya están presentes, ni reemplaces los repositorios de Ubuntu por los de Debian.
 
-### 2. Crear usuario y habilitar doas
+### 2. Crear usuario y habilitar sudo
 
-Como root, instalá el paquete de doas y Git:
+En Debian se utiliza **`sudo`** para administrar el sistema. No hace falta instalar ni configurar `doas`.
+
+Como root, instalá `sudo` y Git si faltan:
 
 ```sh
 apt update
-apt install doas git
+apt install sudo git
 ```
 
-En una instalación nueva donde todavía no existe el usuario:
+En una instalación nueva, creá el usuario si todavía no existe y añadilo al grupo `sudo`:
 
 ```sh
 adduser USUARIO
 usermod -aG sudo USUARIO
 ```
 
-El grupo administrativo habitual de Debian es `sudo` (no `wheel`). Si el usuario ya existe, ejecutá solamente `usermod -aG sudo USUARIO` si corresponde.
+Si el usuario ya existe, **no** vuelvas a crearlo: utilizá únicamente `usermod -aG sudo USUARIO` si todavía no pertenece al grupo. `-aG` conserva los demás grupos.
 
-Debian utiliza `/etc/doas.conf`. Para una instalación nueva y sin reglas anteriores:
+En Debian, las instalaciones habituales incluyen una regla para el grupo `sudo` en `/etc/sudoers`, pero verificá que esté habilitada mediante `visudo` si `sudo` no funciona. **No uses redirecciones sobre `/etc/sudoers`**: un error de sintaxis podría bloquear el acceso administrativo.
 
-```sh
-printf 'permit :sudo\n' > /etc/doas.conf
-chmod 0400 /etc/doas.conf
-```
-
-Si el archivo existe, editalo conservando sus reglas; **no** ejecutes esa redirección. Cerrá la sesión root, iniciá como `USUARIO` y verificá:
+Cerrá la sesión root e iniciá una sesión nueva como `USUARIO` para aplicar los grupos. Comprobá:
 
 ```sh
-doas id -u
-doas apt update
+groups
+sudo id -u
+sudo apt update
 ```
+
+`sudo id -u` debe imprimir `0`. Si `sudo` no está configurado en esa instalación, regresá a root para revisarlo sin modificar permisos a ciegas.
 
 ## Instalación común, sin comandos manuales adicionales
+
+Desde aquí, `linux-setup` utiliza `doas` en Alpine o `sudo` en Debian cuando necesita instalar paquetes, y su instalación se ejecuta como usuario normal.
 
 Con la sesión abierta como **usuario normal**:
 
