@@ -2,6 +2,14 @@
 
 Instalador de arranque para **Alpine Linux y Debian/Ubuntu**, con **Fish obligatorio** y módulos independientes de [linux-tools](https://github.com/agusc01/linux-tools).
 
+## Preparación inicial de Alpine y Debian
+
+**Guía completa:** [Crear el usuario, configurar doas y los repositorios](docs/primeros-pasos.md).
+
+En Alpine, el grupo administrativo recomendado en esta guía es `wheel`, con configuración `/etc/doas.d/doas.conf`. En Debian es `sudo`, con `/etc/doas.conf`. Los repositorios son diferentes: `/etc/apk/repositories` (Alpine) frente a archivos APT (Debian). Usá la guía correspondiente antes de ejecutar `linux-setup` como usuario normal.
+
+El instalador instala automáticamente `whereis` mediante `util-linux-misc` en Alpine y `util-linux` en Debian/Ubuntu. Al finalizar crea `~/.config/fish/conf.d/linux-setup-path.fish` con `fish_add_path /sbin /usr/sbin`, sin alterar otras configuraciones Fish.
+
 ## Primer arranque
 
 Desde una Alpine **recién instalada**, necesitás `git` para poder clonar el instalador. Si todavía no existe, ejecutá como root `su -`, luego `apk add git` y finalmente `exit`. El instalador instalará Fish y el resto, sin necesidad de root permanente.
