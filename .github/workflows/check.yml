@@ -41,3 +41,18 @@ jobs:
         run: |
           adduser -D tester
           su tester -s /bin/sh -c "cd '$GITHUB_WORKSPACE' && sh lib/dshortcuts-setup.sh --yes && sh lib/dshortcuts-setup.sh --verify"
+
+  dwm-rofi-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dwm compilation dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential git patch libx11-dev libxft-dev libxinerama-dev libxrender-dev libxcomposite-dev libimlib2-dev libxext-dev libfontconfig1-dev
+      - name: Apply Rofi window focus patch to clean dwm fork
+        run: |
+          git clone --depth 1 https://github.com/agusc01/dwm.git /tmp/dwm-rofi-test
+          patch -s -d /tmp/dwm-rofi-test -p1 --dry-run < profiles/dwm/rofi-window-focus.patch
+          patch -s -d /tmp/dwm-rofi-test -p1 < profiles/dwm/rofi-window-focus.patch
+          grep -Fq 'linux-setup: rofi-window-focus' /tmp/dwm-rofi-test/dwm.c
+      - name: Compile patched dwm
+        run: make -C /tmp/dwm-rofi-test clean all
