@@ -37,9 +37,8 @@ case "$ID" in
             fi
         fi
         if [ "$missing" -eq 0 ]; then
-            echo 'Xorg: paquetes y configuración OpenRC ya presentes; sin cambios.'
-            exit 0
-        fi
+            echo 'Xorg: paquetes y configuración OpenRC ya presentes.'
+        else
         command -v setup-xorg-base >/dev/null 2>&1 || {
             echo 'Error: Alpine no incluye setup-xorg-base (paquete alpine-conf).' >&2; exit 1
         }
@@ -50,6 +49,7 @@ case "$ID" in
                 echo "Error: Xorg no terminó de instalar $pkg." >&2; exit 1
             }
         done
+        fi
         ;;
     debian|ubuntu)
         echo 'Xorg (Debian/Ubuntu): paquetes Xorg, xinit y libinput; acceso a dispositivos gestionado por la sesión.'
@@ -75,12 +75,12 @@ if [ "$ID" = alpine ]; then
             echo "Xorg: no existe el grupo $group; se omite." >&2
             continue
         fi
-        if id -nG "$current_user" | tr ' ' '\\n' | grep -Fxq "$group"; then
+        if id -nG "$current_user" | tr ' ' '\n' | grep -Fxq "$group"; then
             echo "Xorg: $current_user ya pertenece a $group."
         else
             echo "Xorg: agregando $current_user al grupo $group."
             dshortcuts_as_root adduser "$current_user" "$group"
-            id -nG "$current_user" | tr ' ' '\\n' | grep -Fxq "$group" || {
+            id -nG "$current_user" | tr ' ' '\n' | grep -Fxq "$group" || {
                 echo "Error: falló la asignación de grupo $group." >&2; exit 1
             }
             echo "Xorg: cerrá la sesión y volvé a ingresar para aplicar $group."
