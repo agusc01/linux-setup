@@ -42,7 +42,7 @@ finish() {
     code=$?
     rm -rf "$tmp"
     if [ "$code" -ne 0 ]; then
-        printf '\\n[ERROR] Falló la etapa: %s (código %s).\\n' "$stage" "$code" >&2
+        printf '\n[ERROR] Falló la etapa: %s (código %s).\n' "$stage" "$code" >&2
     fi
 }
 trap finish EXIT
