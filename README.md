@@ -31,7 +31,7 @@ No se fuerza sonido en equipos con otro códec. Para los detalles, ver la guía 
 
 ## Estado del proyecto
 
-**Primera entrega de bootstrap:** Fish, Git, rotación, brillo y audio; menú de texto. Todavía faltan el selector de módulos con `dialog`, instaladores de dwm/st/slock, dshortcuts, dbar, Ranger y otros componentes. No se borra ni archiva ningún repositorio anterior.
+**Primera entrega de bootstrap:** Fish, Git, rotación, brillo y audio; menú de texto. Todavía faltan el selector de módulos con `dialog`, dbar, Ranger y otros componentes. `dwm`, `st` y `slock` ya cuentan con módulos de instalación independientes, además de dshortcuts. No se borra ni archiva ningún repositorio anterior.
 
 Ejecutá `sh tests/check.sh` para las pruebas básicas, sin instalar paquetes en el entorno de test.
 
@@ -142,3 +142,46 @@ Si el código fuente está en otro directorio, utilizá `--source /ruta/al/dwm`.
 Al terminar, cerrá dwm de manera normal e iniciá nuevamente `startx` para usar el ejecutable nuevo. Probá `lt-rofi windows` seleccionando una ventana en el tag actual y luego otra en un tag diferente: debe enfocar cada una sin moverlas permanentemente de tag.
 
 El parche fue diseñado para el manejo estándar de `_NET_ACTIVE_WINDOW` usado tanto en dwm original como en el fork consultado. Si `patch` lo rechaza en una versión más modificada, el instalador aborta sin cambiar el binario anterior. No se sobrescriben modificaciones ajenas en el código fuente.
+
+## Instalación reproducible de dwm, st y slock
+
+Tres módulos **opcionales**, separados del resto de las herramientas. Se obtienen de los forks personales `agusc01/dwm`, `agusc01/st` y `agusc01/slock`, cada uno **fijado a una revisión Git exacta**. Fish sigue siendo obligatorio en `linux-setup`; no se modifica el repositorio del fork ni las fuentes ya existentes.
+
+```sh
+# Ver primero qué hará en Alpine/Debian.
+sh install.sh --modules dwm,st --dry-run
+
+# Instala Fish/linux-tools si hace falta y compila dwm + st.
+sh install.sh --modules dwm,st
+
+# slock requiere un opt-in explícito; no se incluye con dwm.
+sh install.sh --modules slock --dry-run
+sh install.sh --modules slock
+```
+
+Si ya tenés `/usr/local/bin/dwm`, `/usr/local/bin/st` o `/usr/local/bin/slock`, **NO** se sobrescriben al ejecutar la instalación habitual: se informan como «Sin cambios». Una reinstalación se solicita expresamente, con respaldo previo del ejecutable anterior:
+
+```sh
+# Preservar configuración personalizada del dwm que ya funciona.
+sh lib/suckless-setup.sh --modules dwm --source /usr/src/suckless/dwm --reinstall --dry-run
+sh lib/suckless-setup.sh --modules dwm --source /usr/src/suckless/dwm --reinstall
+
+# Reinstalar st desde su código local, si corresponde.
+sh lib/suckless-setup.sh --modules st --source /usr/src/suckless/st --reinstall --dry-run
+```
+
+Con `--source` solo se acepta **un módulo por ejecución**. Se copia el código local a un directorio temporal; no se cambian `config.h`, `keys.h` ni otros archivos de origen. Si no se indica `--source`, se compila la revisión fijada del fork GitHub (que podría tener configuraciones distintas de tus modificaciones locales). Para dwm, el instalador aplica en la copia el parche Rofi de navegación entre tags si todavía no está incluido. Si no puede aplicar ese parche, aborta sin reemplazar nada.
+
+En Alpine v3.24 el fork de dwm requiere `imlib2-dev` de **community**. El instalador obtiene solo esa dependencia usando un repositorio temporal `--repository`, sin editar `/etc/apk/repositories`, y pide autorización antes de instalar. El resto de las dependencias se prepara automáticamente para cada módulo, sin pedir `apk add` manuales. `st` necesita `tic` del paquete `ncurses`; se instala también la entrada `st.info` en `~/.terminfo` del usuario. La integración **no** ejecuta `make install` como root.
+
+Cuando se instala dwm y **no existe** `~/.xinitrc`, se crea uno mínimo que lanza `/usr/local/bin/dwm` y expone `~/.local/bin` para los atajos. Si ya existe, se conserva íntegro, incluso si es un enlace simbólico. No inicia ni reinicia Xorg/dwm automáticamente. Para entrar en una instalación nueva con Xorg configurado, usá `startx`.
+
+**Seguridad de slock:** es un bloqueador de pantalla; necesita un binario propiedad de root con permiso `4755` para autenticar la contraseña local. Por eso no se instala implícitamente al pedir dwm. Verifica `nobody:nogroup`, no se ejecuta de forma automática y debe probarse únicamente cuando el usuario sepa cómo desbloquear su cuenta. En ningún caso se modifica la contraseña.
+
+Para compilar y verificar fuentes sin reemplazar ejecutables ni terminfo:
+
+```sh
+sh lib/suckless-setup.sh --modules dwm,st,slock --build-only --yes
+```
+
+La compilación normal usa un directorio temporal y solo instala binarios una vez que se han compilado correctamente. Las copias de seguridad quedan en `~/.local/state/linux-setup/backups/`. Después de actualizar dwm, salí de dwm normalmente y volvé a entrar mediante `startx`; no se fuerza un reinicio en caliente.

@@ -56,3 +56,24 @@ jobs:
           grep -Fq 'linux-setup: rofi-window-focus' /tmp/dwm-rofi-test/dwm.c
       - name: Compile patched dwm
         run: make -C /tmp/dwm-rofi-test clean all
+
+  suckless-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build dwm, st and slock without system installation
+        run: sh lib/suckless-setup.sh --modules dwm,st,slock --build-only --yes
+
+  suckless-alpine:
+    runs-on: ubuntu-latest
+    container: alpine:3.24
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare build environment using stable main + temporary community
+        run: |
+          apk add --no-cache build-base git pkgconf libx11-dev libxft-dev libxinerama-dev libxrender-dev libxcomposite-dev libxext-dev fontconfig-dev freetype-dev libxrandr-dev linux-headers ncurses xorg-server xinit ca-certificates
+          apk add --no-cache --repository https://dl-cdn.alpinelinux.org/alpine/v3.24/community imlib2-dev
+      - name: Verify all pinned forks build as unprivileged user
+        run: |
+          adduser -D tester
+          su tester -s /bin/sh -c "cd '$GITHUB_WORKSPACE' && sh lib/suckless-setup.sh --modules dwm,st,slock --build-only --yes"
