@@ -54,6 +54,7 @@ printf 'ID=alpine\nVERSION_ID=3.24.2\n' > "$tmp/os-release"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules audio,rotate --dry-run > "$tmp/result"
 grep -Fq 'Sistema: Alpine' "$tmp/result"
 grep -Fxq 'Módulos: fish,rotate,audio' "$tmp/result"
+grep -Fq 'Paquetes base: fish git util-linux-misc' "$tmp/result"
 grep -Fq 'xrandr xinput' "$tmp/result"
 
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules wifi,bluetooth --dry-run > "$tmp/result"
@@ -88,7 +89,7 @@ grep -Fq 'Módulo adicional: linux-doctor' "$tmp/result"
 grep -Fq 'Doctor: simulación' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules brightness --dry-run > "$tmp/result"
 grep -Fq 'Sistema: Debian/Ubuntu' "$tmp/result"
-grep -Fq 'Paquetes base: fish git x11-xserver-utils' "$tmp/result"
+grep -Fq 'Paquetes base: fish git util-linux x11-xserver-utils' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules wifi,bluetooth --dry-run > "$tmp/result"
 grep -Fxq 'Módulos: fish,wifi,bluetooth' "$tmp/result"
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules rofi --dry-run > "$tmp/result"
@@ -112,6 +113,16 @@ if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/lib/suckless-setup.sh" --m
 fi
 if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/lib/suckless-setup.sh" --modules dwm,st --source /tmp --dry-run >/dev/null 2>&1; then
     echo 'FALLO: suckless permitió usar un solo --source para múltiples módulos.' >&2
+    exit 1
+fi
+grep -Fq 'fish_add_path /sbin /usr/sbin' "$root/install.sh"
+grep -Fq 'linux-setup-path.fish' "$root/install.sh"
+test -f "$root/docs/primeros-pasos.md"
+grep -Fq 'permit :wheel' "$root/docs/primeros-pasos.md"
+grep -Fq 'apt install sudo git' "$root/docs/primeros-pasos.md"
+grep -Fq 'sudo apt update' "$root/docs/primeros-pasos.md"
+if grep -Fq 'apt install doas' "$root/docs/primeros-pasos.md"; then
+    echo 'FALLO: no se debe recomendar doas en Debian.' >&2
     exit 1
 fi
 echo 'OK: Alpine/Debian, Fish obligatorio, dependencias automáticas y módulos dwm/st/slock seguros.'
