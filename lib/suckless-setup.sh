@@ -11,11 +11,12 @@ modules=''
 dry_run=0
 assume_yes=0
 reinstall=0
+build_only=0
 source_dir=''
 release=/etc/os-release
 
 usage() {
-    echo 'Uso: sh lib/suckless-setup.sh --modules dwm,st,slock [--dry-run] [--yes] [--reinstall] [--source RUTA]'
+    echo 'Uso: sh lib/suckless-setup.sh --modules dwm,st,slock [--dry-run] [--yes] [--reinstall] [--build-only] [--source RUTA]'
     echo '--source admite un único módulo y nunca altera ese directorio.'
     echo 'Por seguridad, slock solo se instala si se selecciona expresamente.'
 }
@@ -26,6 +27,7 @@ while [ "$#" -gt 0 ]; do
         --dry-run) dry_run=1; shift ;;
         --yes) assume_yes=1; shift ;;
         --reinstall) reinstall=1; shift ;;
+        --build-only) build_only=1; reinstall=1; shift ;;
         --help|-h) usage; exit 0 ;;
         *) echo "Opción desconocida: $1" >&2; exit 2 ;;
     esac
@@ -86,7 +88,9 @@ if [ "$ID" = alpine ]; then
 fi
 echo 'Fuentes oficiales: forks agusc01 fijados por commit; no se modifica el repositorio original.'
 if [ -n "$source_dir" ]; then echo "Fuente local (solo lectura): $source_dir"; fi
-if [ "$reinstall" -eq 0 ]; then
+if [ "$build_only" -eq 1 ]; then
+    echo 'Modo compilación: no se reemplazarán ejecutables ni se modificará terminfo.'
+elif [ "$reinstall" -eq 0 ]; then
     echo 'Los ejecutables ya instalados NO se reemplazarán (usar --reinstall expresamente).'
 else
     echo 'Se respaldará cada ejecutable existente antes de reemplazarlo.'
@@ -197,6 +201,11 @@ case " $to_install " in *" st "*|"st "*|*" st"|"st")
     tic -sx -o "$HOME/.terminfo" "$work/st/st.info"
     ;;
 esac
+
+if [ "$build_only" -eq 1 ]; then
+    echo 'OK: todos los módulos seleccionados compilaron; no se modificaron ejecutables.'
+    exit 0
+fi
 
 backup_base="$HOME/.local/state/linux-setup/backups"
 for name in $to_install; do
