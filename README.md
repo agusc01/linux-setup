@@ -45,6 +45,14 @@ sh lib/xorg-setup.sh
 
 En Alpine, el instalador prepara D-Bus y elogind, inicia y habilita sus servicios en OpenRC, y respeta un gestor `seatd` ya habilitado para no configurarlos en paralelo. Reiniciá y volvé a iniciar sesión en una TTY antes de probar `startx`. Esto también funciona si dwm ya estaba instalado; **no requiere recompilarlo**.
 
+## Una única aprobación y menos solicitudes de contraseña
+
+Con `sh install.sh`, el selector elige módulos y a continuación se muestra **una sola confirmación para la instalación completa**. Los instaladores internos reciben automáticamente esa aprobación, por lo que no vuelven a preguntar `s/N` por cada componente. Para instalaciones no interactivas, `--yes` sigue siendo explícito.
+
+En Alpine, el archivo doas **administrado por linux-setup** utiliza `permit persist :wheel`: tras introducir la contraseña, las siguientes operaciones administrativas pueden reutilizar la autenticación durante un período limitado. **No es `nopass`** y la contraseña puede volver a solicitarse cuando caduque el período. El instalador respeta políticas ajenas y no almacena contraseñas. Para sesiones Debian/Ubuntu se respeta la caché normal de `sudo`.
+
+En nuevas sesiones Fish se agregan `/sbin`, `/usr/sbin` y `/usr/local/sbin` al PATH, con verificación de `reboot` desde Fish. Como un script hijo no puede cambiar el entorno de la shell que lo llamó, **abrí una nueva sesión Fish** después de instalar; no hace falta escribir `/sbin/reboot` si la shell y `doas` resuelven la orden correctamente.
+
 ## Primer arranque
 
 Con `bootstrap.sh` completado y una sesión de usuario normal, Git ya está disponible y podés clonar el repositorio.

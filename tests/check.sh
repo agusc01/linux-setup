@@ -9,6 +9,7 @@ stage="Sintaxis POSIX"
 echo "[1/5] Validando sintaxis de scripts..." 
 sh -n "$root/install.sh"
 sh -n "$root/bootstrap.sh"
+sh -n "$root/lib/doas-persist-setup.sh"
 sh -n "$root/lib/dshortcuts-setup.sh"
 sh -n "$root/lib/dshortcuts-deps.sh"
 sh -n "$root/lib/dwm-rofi-setup.sh"
@@ -172,12 +173,17 @@ if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/lib/suckless-setup.sh" --m
     echo 'FALLO: suckless permitió usar un solo --source para múltiples módulos.' >&2
     exit 1
 fi
-grep -Fq 'fish_add_path /sbin /usr/sbin' "$root/install.sh"
+grep -Fq 'fish_add_path -g /sbin /usr/sbin /usr/local/sbin' "$root/install.sh"
+grep -Fq "assume_yes=1" "$root/install.sh"
+grep -Fq 'doas /bin/sh' "$root/install.sh"
+grep -Fq "permit persist :wheel" "$root/lib/doas-persist-setup.sh"
+grep -Fq "permit persist :wheel" "$root/bootstrap.sh"
+grep -Fq 'fish -c' "$root/install.sh"
 grep -Fq 'linux-setup-path.fish' "$root/install.sh"
 test -f "$root/docs/primeros-pasos.md"
-grep -Fq 'permit :wheel' "$root/docs/primeros-pasos.md"
-grep -Fq 'apt install sudo git' "$root/docs/primeros-pasos.md"
-grep -Fq 'sudo apt update' "$root/docs/primeros-pasos.md"
+grep -Fq 'doas id -u' "$root/docs/primeros-pasos.md"
+grep -Fq 'apt-get install -y sudo git' "$root/docs/primeros-pasos.md"
+grep -Fq 'sudo id -u' "$root/docs/primeros-pasos.md"
 if grep -Fq 'apt install doas' "$root/docs/primeros-pasos.md"; then
     echo 'FALLO: no se debe recomendar doas en Debian.' >&2
     exit 1

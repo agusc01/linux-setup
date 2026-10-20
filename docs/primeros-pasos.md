@@ -22,7 +22,7 @@ El asistente solicita **solo el nombre del usuario** y, cuando crea una cuenta n
 | Grupo administrativo | `wheel` | `sudo` |
 | Política | `/etc/doas.d/linux-setup.conf`, autenticación requerida | Política `sudoers` propia del sistema |
 
-El bootstrap no sustituye archivos ajenos de `doas` ni habilita `nopass`. Comprueba que el usuario pertenezca al grupo y ejecuta una verificación real como ese usuario (`doas id -u` o `sudo id -u`). Deberá imprimir `0`, y se solicita su contraseña cuando corresponda. Si no puede confirmar la autenticación, **no declara el proceso completado** y muestra cómo repetir la comprobación. El bootstrap requiere TTY interactiva y ejecutarse como root.
+El bootstrap no sustituye archivos ajenos de `doas` ni habilita `nopass`. Configura `permit persist :wheel` para que la autenticación con contraseña pueda reutilizarse temporalmente mientras se instalan paquetes; si caduca, se solicitará nuevamente. Comprueba que el usuario pertenezca al grupo y ejecuta una verificación real como ese usuario (`doas id -u` o `sudo id -u`). Deberá imprimir `0`, y se solicita su contraseña cuando corresponda. Si no puede confirmar la autenticación, **no declara el proceso completado** y muestra cómo repetir la comprobación. El bootstrap requiere TTY interactiva y ejecutarse como root.
 
 > La pertenencia a `wheel` o `sudo` concede permisos administrativos. No lo ejecutes para cuentas de usuarios que no deban administrarlo.
 
@@ -43,7 +43,7 @@ En Debian/Ubuntu no añade esos grupos indiscriminadamente: normalmente los disp
 
 ## Repositorios
 
-El archivo de Alpine es `/etc/apk/repositories`. La rama debe coincidir con `/etc/alpine-release` (por ejemplo `v3.24` para `3.24.2`). La instalación de Xorg puede habilitar `community`; se anuncia en la simulación. Debian/Ubuntu utilizan repositorios APT, típicamente bajo `/etc/apt/sources.list.d/`. El script no reemplaza listas de repositorios existentes.
+Después de instalar Fish, `linux-setup` configura su PATH con `/sbin`, `/usr/sbin` y `/usr/local/sbin` y ejecuta una comprobación en una nueva sesión Fish. Si ya tenías Fish abierto, iniciá una sesión nueva para que se cargue el archivo `conf.d`.\n\nEl archivo de Alpine es `/etc/apk/repositories`. La rama debe coincidir con `/etc/alpine-release` (por ejemplo `v3.24` para `3.24.2`). La instalación de Xorg puede habilitar `community`; se anuncia en la simulación. Debian/Ubuntu utilizan repositorios APT, típicamente bajo `/etc/apt/sources.list.d/`. El script no reemplaza listas de repositorios existentes.
 
 ## Seguridad y alcance
 

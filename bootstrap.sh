@@ -55,14 +55,14 @@ if [ "$ID" = alpine ]; then
         echo 'Conflicto: la regla doas es un enlace simbólico; no se sobrescribe.' >&2; exit 1
     fi
     if [ -e "$conf" ]; then
-        [ -f "$conf" ] && [ "$(cat "$conf")" = 'permit :wheel' ] || {
+        [ -f "$conf" ] && { [ "$(cat "$conf")" = 'permit :wheel' ] || [ "$(cat "$conf")" = 'permit persist :wheel' ]; } || {
             echo 'Conflicto: configuración doas administrada modificada; no se sobrescribe.' >&2; exit 1
         }
     else
-        ( umask 077; printf 'permit :wheel\n' > "$conf" )
+        ( umask 077; printf 'permit persist :wheel\n' > "$conf" )
     fi
     chmod 0400 "$conf"
-    echo "doas configurado para wheel sin nopass ($conf)"
+    echo "doas configurado para wheel (persist temporal, sin nopass): $conf"
     test_command='doas id -u'
 else
     apt-get update

@@ -215,9 +215,19 @@ case "$tools_dir" in
 esac
 if [ "$assume_yes" -eq 0 ]; then
     [ -t 0 ] || { echo 'Error: se requiere confirmación interactiva o --yes.' >&2; exit 2; }
-    printf '¿Instalar paquetes y ejecutar linux-tools? [s/N]: '
+    printf '¿Aplicar la instalación completa (incluidos los módulos seleccionados)? [s/N]: '
     IFS= read -r reply || reply=''
     case "$reply" in s|S|si|Si|SI) : ;; *) echo 'Cancelado.'; exit 2 ;; esac
+fi
+# La aprobación anterior cubre la selección completa: no se vuelven a
+# pedir decenas de confirmaciones dentro de linux-tools/suckless/dshortcuts.
+assume_yes=1
+# doas sin persist pide la contraseña para cada apk/rc-service. La política
+# propia de linux-setup permite cache temporal, nunca nopass.
+if [ "$ID" = alpine ] && command -v doas >/dev/null 2>&1; then
+    echo 'Alpine: activando caché temporal de autenticación doas (con contraseña, no nopass).'
+    doas /bin/sh "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/doas-persist-setup.sh"
+    echo 'doas: el sistema puede volver a pedir contraseña si expira la caché.'
 fi
 
 admin() {
@@ -287,7 +297,17 @@ elif [ -f "$fish_conf" ] && ! grep -Fxq "$fish_expected" "$fish_conf"; then
     echo "Aviso: se conserva $fish_conf porque no pertenece a linux-setup." >&2
 else
     mkdir -p "$fish_conf_dir"
-    printf '%s\n' "$fish_expected" 'fish_add_path /sbin /usr/sbin' > "$fish_conf"
-    echo 'Fish: /sbin y /usr/sbin disponibles en nuevas sesiones.'
+    printf '%s\n' "$fish_expected" 'fish_add_path -g /sbin /usr/sbin /usr/local/sbin' > "$fish_conf"
+    echo 'Fish: rutas administrativas configuradas para nuevas sesiones.'
 fi
+# Validar con un proceso Fish nuevo, sin asumir que la shell padre recarga
+# automáticamente cambios en conf.d.
+if command -v fish >/dev/null 2>&1; then
+    if fish -c 'contains -- /sbin $PATH; and contains -- /usr/sbin $PATH; and command -sq reboot'; then
+        echo '[OK] Fish encuentra /sbin, /usr/sbin y reboot en una sesión nueva.'
+    else
+        echo 'Aviso: Fish no reconoce reboot o sus rutas administrativas. Revisá las configuraciones Fish ajenas.' >&2
+    fi
+fi
+echo 'Si seguís en una sesión Fish anterior, abrí una nueva para actualizar PATH.'
 echo 'Instalación finalizada. Si acabás de instalar sof-firmware, reiniciá y probá aplay -l.'
