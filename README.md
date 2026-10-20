@@ -26,6 +26,22 @@ Alpine: `doas` y grupo `wheel`. Debian/Ubuntu: `sudo` y grupo `sudo`. En cada di
 
 El instalador proporciona automáticamente `whereis` mediante `util-linux-misc` en Alpine o `util-linux` en Debian/Ubuntu. Al finalizar administra `~/.config/fish/conf.d/linux-setup-path.fish` con `fish_add_path /sbin /usr/sbin` sin sobrescribir archivos ajenos.
 
+## Preparación automática de Xorg al instalar dwm
+
+**Ya no hace falta ejecutar `doas setup-xorg-base` ni `sudo apt install xorg` a mano.** Al seleccionar `dwm`, `linux-setup` prepara el servidor gráfico antes de compilar el gestor de ventanas.
+
+- **Alpine:** usa el script oficial `setup-xorg-base`, que instala Xorg, xinit, libinput y Mesa y configura `eudev`. **Puede habilitar `community` en `/etc/apk/repositories` y reemplazar el gestor de dispositivos mdev por eudev.** Se anuncia en la simulación y requiere la confirmación habitual de instalación. Si los paquetes y la configuración ya están presentes, se omite.
+- **Debian/Ubuntu:** instala `xserver-xorg`, `xserver-xorg-input-libinput` y `xinit` mediante `apt-get` (sin configurar OpenRC).
+- **Permisos:** no agrega automáticamente al usuario a grupos sensibles como `input`, `video` o `audio`. Si el equipo requiere ajustes específicos, conviene diagnosticarlos primero; en Debian normalmente los permisos los gestiona logind.
+
+```sh
+sh install.sh --modules dwm,st,doctor --dry-run
+sh install.sh --modules dwm,st,doctor
+startx
+```
+
+La preparación de Xorg ocurre solamente al instalar `dwm` por primera vez (o reinstalarlo expresamente); `st` y `doctor` no la activan por sí solos. Un equipo ya configurado no necesita repetir `setup-xorg-base`. Las pruebas `--dry-run` y `--build-only` no modifican servicios ni repositorios.
+
 ## Primer arranque
 
 Desde una Alpine **recién instalada**, necesitás `git` para poder clonar el instalador. Si todavía no existe, ejecutá como root `su -`, luego `apk add git` y finalmente `exit`. El instalador instalará Fish y el resto, sin necesidad de root permanente.
