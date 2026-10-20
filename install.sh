@@ -5,14 +5,17 @@ set -eu
 dry_run=0
 assume_yes=0
 modules=''
+menu_mode=auto
+menu_requested=0
+need_dialog_install=0
 tools_dir=${LINUX_SETUP_TOOLS_DIR:-"$HOME/.local/share/linux-setup/linux-tools"}
 release=/etc/os-release
 
 usage() {
     printf '%s\n' \
-        'Uso: sh install.sh [--modules fish,rotate,audio,brightness,wifi,bluetooth,rofi,dshortcuts,dwm,st,slock] [--dry-run] [--yes] [--tools-dir RUTA]' \
-        'Fish es obligatorio; los módulos opcionales se delegan a linux-tools.' \
-        'No instala ni configura doas. Acepta doas/sudo/su ya disponibles.'
+        'Uso: sh install.sh [--menu|--text-menu|--modules LISTA] [--dry-run] [--yes] [--tools-dir RUTA]' \
+        'Fish es obligatorio. --menu usa dialog o alternativa de texto si todavía no está disponible.' \
+        '--modules conserva compatibilidad con scripts y CI. No configura doas.'
 }
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -23,6 +26,8 @@ while [ "$#" -gt 0 ]; do
         --tools-dir)
             [ "$#" -ge 2 ] || { echo 'Error: falta ruta de linux-tools.' >&2; exit 2; }
             tools_dir=$2; shift 2 ;;
+        --menu) menu_requested=1; menu_mode=auto; shift ;;
+        --text-menu) menu_requested=1; menu_mode=text; shift ;;
         --yes) assume_yes=1; shift ;;
         --dry-run) dry_run=1; shift ;;
         *) echo "Error: opción desconocida $1" >&2; exit 2 ;;
@@ -52,16 +57,32 @@ case "$ID" in
     *) echo "Distribución no soportada: $ID" >&2; exit 1 ;;
 esac
 
-if [ -z "$modules" ]; then
-    modules=fish,rotate,audio,brightness
-    if [ -t 0 ] && [ "$assume_yes" -eq 0 ] && [ "$dry_run" -eq 0 ]; then
-        echo 'Seleccioná los módulos (separados por coma):'
-        echo 'fish [obligatorio], rotate [pantalla táctil X11], audio, brightness [X11], wifi, bluetooth, rofi, dshortcuts, dwm, st, slock'
-        printf 'Módulos [fish,rotate,audio,brightness]: '
-        IFS= read -r reply || reply=''
-        if [ -n "$reply" ]; then modules=$reply; fi
+[ "$menu_requested" -eq 0 ] || [ -z "$modules" ] || {
+    echo 'Error: --menu y --modules no se pueden combinar.' >&2
+    exit 2
+}
+
+# La selección no instala nada: cancelar sale antes de cualquier operación privilegiada.
+if [ "$menu_requested" -eq 1 ] || {
+    [ -z "$modules" ] && [ "$dry_run" -eq 0 ] && [ "$assume_yes" -eq 0 ] && [ -t 0 ]
+}; then
+    selector="$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/module-selector.sh"
+    if ! command -v dialog >/dev/null 2>&1; then
+        need_dialog_install=1
+        echo 'dialog todavía no está instalado: selector textual por esta vez; se preparará dialog si confirmás la instalación.' >&2
+    fi
+    if modules=$(sh "$selector" "--$menu_mode"); then
+        :
+    else
+        status=$?
+        if [ "$status" -eq 130 ]; then
+            echo 'Selección cancelada: no se modificó nada.'
+            exit 0
+        fi
+        exit "$status"
     fi
 fi
+[ -n "$modules" ] || modules=fish,rotate,audio,brightness
 requested=$modules
 want_rotate=0
 want_audio=0
@@ -125,6 +146,9 @@ fi
 
 . "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/dshortcuts-deps.sh"
 packages='fish git'
+if [ "$need_dialog_install" -eq 1 ]; then
+    packages="$packages dialog"
+fi
 if [ "$ID" = alpine ]; then
     if [ "$want_rotate" -eq 1 ]; then packages="$packages xrandr xinput"
     elif [ "$want_brightness" -eq 1 ]; then packages="$packages xrandr"; fi

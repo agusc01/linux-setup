@@ -15,7 +15,7 @@ sh install.sh --dry-run
 sh install.sh
 ```
 
-En modo interactivo ofrece `fish` (obligatorio), `rotate`, `audio`, `brightness`, `wifi`, `bluetooth` y `rofi`. Sin interfaz interactiva, indicá `--modules fish,rotate,audio,brightness --yes`. Se confirma antes de instalar; no escribe configuraciones ajenas ni instala `doas`.
+En modo interactivo muestra un checklist con `dialog`: Fish (obligatorio) más rotación, audio, brillo, Wi-Fi, Bluetooth, Rofi, dshortcuts, dwm, st y slock (siempre desmarcado por seguridad). Si `dialog` aún no existe, ofrece un selector de texto sin necesitar paquetes adicionales y, tras aprobar la instalación, agrega `dialog` para próximas ejecuciones. Sin interfaz interactiva, indicá `--modules fish,rotate,audio,brightness --yes`. Se confirma antes de instalar; no escribe configuraciones ajenas ni instala `doas`.
 
 Instala automáticamente Fish y Git mediante `apk` o `apt-get`, y las dependencias X11 (`xrandr`, `xinput`) solamente cuando se seleccionan rotación o brillo. Obtiene `linux-tools` desde GitHub y deja que ese proyecto instale y configure las funciones, audio, firmware y demás herramientas. Usa `doas`, `sudo` o `su` existentes solo para los paquetes. Nunca ejecuta todo el instalador como root.
 
@@ -31,7 +31,7 @@ No se fuerza sonido en equipos con otro códec. Para los detalles, ver la guía 
 
 ## Estado del proyecto
 
-**Primera entrega de bootstrap:** Fish, Git, rotación, brillo y audio; menú de texto. Todavía faltan el selector de módulos con `dialog`, dbar, Ranger y otros componentes. `dwm`, `st` y `slock` ya cuentan con módulos de instalación independientes, además de dshortcuts. No se borra ni archiva ningún repositorio anterior.
+**Primera entrega de bootstrap:** Fish, Git, rotación, brillo y audio; menú de texto. Todavía faltan dbar, Ranger y otros componentes. `dwm`, `st` y `slock` ya cuentan con módulos de instalación independientes, además de dshortcuts. No se borra ni archiva ningún repositorio anterior.
 
 Ejecutá `sh tests/check.sh` para las pruebas básicas, sin instalar paquetes en el entorno de test.
 
@@ -185,3 +185,38 @@ sh lib/suckless-setup.sh --modules dwm,st,slock --build-only --yes
 ```
 
 La compilación normal usa un directorio temporal y solo instala binarios una vez que se han compilado correctamente. Las copias de seguridad quedan en `~/.local/state/linux-setup/backups/`. Después de actualizar dwm, salí de dwm normalmente y volvé a entrar mediante `startx`; no se fuerza un reinicio en caliente.
+
+## Selector interactivo de módulos con dialog
+
+Ejecutá como usuario normal desde el directorio de `linux-setup`:
+
+```sh
+# Abre el selector con casillas (o alternativa de texto si dialog todavía no está).
+sh install.sh --menu
+
+# También aparece automáticamente con "sh install.sh" en una terminal interactiva.
+sh install.sh
+
+# Seleccionar módulos y revisar el plan sin instalar nada.
+sh install.sh --menu --dry-run
+
+# Para automatizaciones no hace falta una UI:
+sh install.sh --modules wifi,bluetooth --dry-run
+sh install.sh --modules wifi,bluetooth --yes
+
+# Forzar menú de texto aun si dialog está instalado:
+sh install.sh --text-menu
+```
+
+Con `dialog`, usá **flechas** para navegar, **Espacio** para marcar/desmarcar y **Enter** para continuar. `Fish` nunca puede desmarcarse. Los módulos rotación, audio y brillo están preseleccionados; `slock` está desmarcado y requiere marcarlo explícitamente por sus permisos setuid-root. `dshortcuts` incorpora automáticamente los módulos necesarios para sus submenús, incluso si no estaban marcados individualmente.
+
+Al continuar se imprime el **resumen de sistema, módulos, paquetes y fuentes** y se pide una segunda confirmación antes de modificar nada. **Cancelar** el selector sale sin tocar archivos, paquetes ni servicios. Si `dialog` no está instalado en una Alpine nueva, un selector numérico permite elegir en la primera ejecución; únicamente después de confirmar la instalación se instala `dialog` con el resto de paquetes. No se exige `apk add dialog` manual. También admite `--text-menu` para terminales limitadas.
+
+Para scripts o recuperación desde SSH, `--modules` sigue funcionando sin abrir menús. No se puede combinar `--menu` con `--modules`. En ausencia de TTY, `sh install.sh --dry-run` o `sh install.sh --modules ... --yes` mantienen el comportamiento no interactivo y sin dependencias de `dialog`.
+
+Validación:
+
+```sh
+sh tests/check.sh
+sh tests/module-selector.sh
+```
