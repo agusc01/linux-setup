@@ -25,7 +25,11 @@ linux_setup_source_save() (
     from=$2
     directory="$(linux_setup_source_root)"
     dest="$directory/$name"
-    if [ -e "$dest" ] || [ -L "$dest" ]; then
+    if [ -L "$dest" ]; then
+        echo "Error: fuente enlazada, no se modifica: $dest" >&2
+        exit 1
+    fi
+    if [ -e "$dest" ]; then
         echo "Fuente existente conservada: $dest"
         exit 0
     fi
@@ -38,7 +42,11 @@ linux_setup_source_save() (
     trap 'rm -rf "$tmp"' EXIT HUP INT TERM
     cp -R "$from/." "$tmp/"
     [ -f "$tmp/Makefile" ] || { echo "Error: Makefile ausente al preservar $name" >&2; exit 1; }
-    if [ -e "$dest" ] || [ -L "$dest" ]; then
+    if [ -L "$dest" ]; then
+        echo "Error: fuente enlazada concurrentemente: $dest" >&2
+        exit 1
+    fi
+    if [ -e "$dest" ]; then
         echo "Fuente creada por otro proceso conservada: $dest"
         exit 0
     fi
