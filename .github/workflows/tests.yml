@@ -1,0 +1,21 @@
+name: linux-setup tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  debian:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: POSIX shell tests
+        run: sh tests/check.sh
+  alpine:
+    runs-on: ubuntu-latest
+    container: alpine:3.22
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencies for test commands
+        run: apk add --no-cache bash coreutils grep findutils
+      - name: POSIX shell tests
+        run: sh tests/check.sh
