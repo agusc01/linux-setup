@@ -46,4 +46,24 @@ grep -Fq 'Resumen:' "$tmp/result"
 cp "$state" "$tmp/before"
 sh "$script" --verify > /dev/null 2>&1 || :
 cmp "$state" "$tmp/before"
+# dwm y st deben verificarse incluso si están fuera de PATH (Alpine/ash).
+suckless="$tmp/usr-local-bin"
+mkdir -p "$suckless" "$tmp/suckless-state/linux-setup"
+LINUX_SETUP_SUCKLESS_BIN_DIR="$suckless"
+XDG_STATE_HOME="$tmp/suckless-state"
+export LINUX_SETUP_SUCKLESS_BIN_DIR XDG_STATE_HOME
+printf '%s\\n' '# linux-setup modules v1' 'dwm' 'st' > "$XDG_STATE_HOME/linux-setup/installed-modules"
+printf '#!/bin/sh\\nexit 0\\n' > "$suckless/dwm"
+printf '#!/bin/sh\\nexit 0\\n' > "$suckless/st"
+printf '#!/bin/sh\\nexit 0\\n' > "$tmp/bin/startx"
+printf '#!/bin/sh\\nexec /usr/local/bin/dwm\\n' > "$HOME/.xinitrc"
+chmod 755 "$suckless/dwm" "$suckless/st" "$tmp/bin/startx"
+sh "$script" --verify > "$tmp/result"
+grep -Eq '\\[OK[[:space:]]*\\] dwm' "$tmp/result"
+grep -Eq '\\[OK[[:space:]]*\\] st' "$tmp/result"
+rm "$suckless/st"
+if sh "$script" --verify > "$tmp/result" 2>&1; then
+    echo 'FALLO: no detectó st faltante.' >&2; exit 1
+fi
+grep -Eq '\\[FAIL\\] st' "$tmp/result"
 printf '%s\n' '[OK] Inventario: registro acumulativo, validación, ausencia y solo lectura.'
