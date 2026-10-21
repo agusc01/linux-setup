@@ -138,7 +138,7 @@ grep -Fq 'Doctor: simulación' "$tmp/result"
 sh "$root/lib/linux-doctor-setup.sh" --dry-run | grep -Fq 'sin cambios ni reparaciones'
 # Sólo módulos fijados: consulta sin red y sin modificar el inventario.
 mkdir -p "$tmp/update-state/linux-setup"
-printf '%s\\n' '# linux-setup modules v1' 'dwm' 'st' > "$tmp/update-state/linux-setup/installed-modules"
+printf '%s\n' '# linux-setup modules v1' 'dwm' 'st' > "$tmp/update-state/linux-setup/installed-modules"
 XDG_STATE_HOME="$tmp/update-state" sh "$root/install.sh" --check-updates > "$tmp/check-updates"
 grep -Fq '[FIJADOS] dwm st' "$tmp/check-updates"
 grep -Fq 'ningún archivo modificado' "$tmp/check-updates"
