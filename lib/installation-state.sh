@@ -181,6 +181,19 @@ verify() {
         verify_one "$name"
         case "$name" in dwm|st|slock|dshortcuts) verify_source "$name" ;; esac
     done < "$state"
+    # Auditar las dependencias declaradas en keys.h sin ejecutar ninguna tecla.
+    # Una dependencia ausente es advertencia, no error del ejecutable de dwm.
+    case " $selected " in
+        *" dwm "*)
+            audit="$(CDPATH= cd "$(dirname "$0")" && pwd)/dwm-shortcuts-check.sh"
+            if [ -f "$source_root/dwm/keys.h" ]; then
+                if sh "$audit" --quiet; then
+                    result OK dwm-atajos 'Comandos SHCMD y launcher disponibles en Fish'
+                else
+                    result WARN dwm-atajos 'Hay comandos no disponibles; ejecutá sh lib/dwm-shortcuts-check.sh'
+                fi
+            fi ;;
+    esac
     [ -n "$selected" ] || result WARN inventario 'El registro está vacío'
     if [ -x "$HOME/.local/bin/linux-doctor" ] && [ -f "$state" ]; then
         # Los FAIL de linux-doctor no duplican los del inventario: diagnóstico
