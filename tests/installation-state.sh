@@ -75,7 +75,6 @@ mkdir -p "$source_root"
 printf '%s\\n' '# linux-setup modules v1' 'dwm' 'st' 'slock' 'dshortcuts' > "$XDG_STATE_HOME/linux-setup/installed-modules"
 sh "$script" --verify > "$tmp/result" 2>&1 || :
 grep -Fq 'Fuente no recuperada:' "$tmp/result"
-grep -Fq '0 errores' "$tmp/result" || : # los binarios pueden faltar en este entorno aislado
 for name in dwm st slock dshortcuts; do
     mkdir -p "$source_root/$name"
     printf 'all:\\n\\t@true\\n' > "$source_root/$name/Makefile"
