@@ -4,6 +4,7 @@
 set -eu
 dry_run=0
 update_mode=0
+verify_mode=0
 assume_yes=0
 modules=''
 menu_mode=auto
@@ -14,7 +15,7 @@ release=/etc/os-release
 
 usage() {
     printf '%s\n' \
-        'Uso: sh install.sh [--menu|--text-menu|--modules LISTA] [--dry-run] [--update] [--yes] [--tools-dir RUTA]' \
+        'Uso: sh install.sh [--menu|--text-menu|--modules LISTA] [--dry-run] [--verify] [--update] [--yes] [--tools-dir RUTA]' \
         'Fish es obligatorio. --menu usa dialog o alternativa de texto si todavía no está disponible.' \
         '--modules conserva compatibilidad con scripts y CI. No configura doas.'
 }
@@ -31,10 +32,22 @@ while [ "$#" -gt 0 ]; do
         --text-menu) menu_requested=1; menu_mode=text; shift ;;
         --yes) assume_yes=1; shift ;;
         --update) update_mode=1; shift ;;
+        --verify) verify_mode=1; shift ;;
         --dry-run) dry_run=1; shift ;;
         *) echo "Error: opción desconocida $1" >&2; exit 2 ;;
     esac
 done
+
+# La verificación es independiente del instalador y no solicita permisos.
+if [ "$verify_mode" -eq 1 ]; then
+    [ -z "$modules" ] && [ "$menu_requested" -eq 0 ] && [ "$update_mode" -eq 0 ] &&
+    [ "$dry_run" -eq 0 ] && [ "$assume_yes" -eq 0 ] || {
+        echo 'Error: --verify no se combina con opciones de instalación.' >&2
+        exit 2
+    }
+    sh "$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/installation-state.sh" --verify
+    exit $?
+fi
 
 if [ "$dry_run" -eq 1 ] && [ -n "${LINUX_SETUP_OS_RELEASE:-}" ]; then
     release=$LINUX_SETUP_OS_RELEASE
@@ -310,4 +323,26 @@ if command -v fish >/dev/null 2>&1; then
     fi
 fi
 echo 'Si seguís en una sesión Fish anterior, abrí una nueva para actualizar PATH.'
+# El registro se escribe exclusivamente tras completar los instaladores.
+# Nunca registrar módulos de una simulación o una instalación fallida.
+recorded=fish
+[ "$want_rotate" -eq 0 ] || recorded="$recorded,rotate"
+[ "$want_audio" -eq 0 ] || recorded="$recorded,audio"
+[ "$want_brightness" -eq 0 ] || recorded="$recorded,brightness"
+[ "$want_wifi" -eq 0 ] || recorded="$recorded,wifi"
+[ "$want_bluetooth" -eq 0 ] || recorded="$recorded,bluetooth"
+[ "$want_rofi" -eq 0 ] || recorded="$recorded,rofi"
+[ "$want_dshortcuts" -eq 0 ] || recorded="$recorded,dshortcuts"
+[ "$want_dwm" -eq 0 ] || recorded="$recorded,dwm"
+[ "$want_st" -eq 0 ] || recorded="$recorded,st"
+[ "$want_slock" -eq 0 ] || recorded="$recorded,slock"
+[ "$want_doctor" -eq 0 ] || recorded="$recorded,doctor"
+state_script="$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/installation-state.sh"
+sh "$state_script" --record "$recorded"
+echo 'Verificando los módulos instalados...'
+if sh "$state_script" --verify; then
+    echo '[OK] Verificación posterior completada.'
+else
+    echo 'AVISO: la instalación terminó, pero hay elementos que revisar con sh install.sh --verify.' >&2
+fi
 echo 'Instalación finalizada. Si acabás de instalar sof-firmware, reiniciá y probá aplay -l.'
