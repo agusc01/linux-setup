@@ -111,4 +111,9 @@ rm -rf "$source_root/dwm"
 ln -s "$source_root/st" "$source_root/dwm"
 sh "$script" --verify > "$tmp/result" 2>&1 || :
 grep -Fq 'Ruta enlazada:' "$tmp/result"
+# Alias opt-in: se registran pero no se dan por instalados sin archivos reales.
+sh "$script" --record aliases > "$tmp/alias-record"
+grep -Fxq aliases "$XDG_STATE_HOME/linux-setup/installed-modules"
+sh "$script" --verify > "$tmp/result" 2>&1 || :
+grep -Fq '[FAIL] aliases' "$tmp/result"
 printf '%s\n' '[OK] Inventario: registro acumulativo, validación, ausencia y solo lectura.'
