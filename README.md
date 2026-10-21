@@ -34,6 +34,22 @@ sh lib/suckless-setup.sh --modules dwm --reinstall
 
 El instalador compila una copia de la fuente editable y respalda el ejecutable anterior antes de reemplazarlo. No sobrescribe el árbol de código. Para `dshortcuts`, su instalación normal usa la copia persistente y conserva `config.h` e `items.h`. Los modos `--dry-run` y `--build-only` no modifican fuentes persistentes.
 
+## Migración gradual de alias y comandos cortos (POSIX sh + Fish)
+
+Los accesos directos se implementan en [linux-tools](https://github.com/agusc01/linux-tools), no en el repositorio histórico Bash. Los comandos `s0/s1`, `smute/sunmute/stogglemute` y `b0/b1` se instalan junto con `audio` y `brightness`; `rofi_launcher`, `rofi_runner`, `rofi_window` y `rofi_menu` junto con `rofi`. Son ejecutables POSIX `sh`, reconocibles y autocompletables por Fish.
+
+El módulo opcional **`aliases`** contiene los nombres Git cortos `g`, `ga`, `gaA`, `gau`, `gs`, `gss`, `gct`, `gctm`, `gpull`, `gpullremote`, `gamend`; y funciones Fish de navegación `dw`, `dk`, `dc`, `pic`, `cdwm`, `cst`, `cslock`, `cdshortcuts`. Fish sólo se usa cuando es necesario cambiar el directorio de la consola. `gs` puede ocultar el ejecutable Ghostscript porque `~/.local/bin` tiene prioridad: instalá `aliases` si preferís los nombres Git.
+
+```sh
+sh install.sh --modules aliases --dry-run
+sh install.sh --modules aliases
+sh install.sh --verify
+```
+
+También se puede marcar `aliases` desde el selector interactivo. No se modifica `config.h`, las fuentes permanentes de dwm, el historial ni las configuraciones ajenas de Fish. La instalación verifica nombres libres antes de escribir. Si un alias ya existe como archivo personal, aborta sin sobrescribirlo.
+
+Esta es **una primera entrega parcial**: `rofi_menu` usa el menú compacto actual y no el antiguo de 16 opciones, `rofi_internet` (marcadores web) sigue pendiente, y el brillo del nuevo motor prioriza una pantalla en lugar de todas. Los otros alias y dbar se irán migrando en etapas posteriores.
+
 ## Auditoría de atajos del fork dwm
 
 El fork `agusc01/dwm` utiliza `keys.h` y `launchers.h` como fuente de verdad. Para revisar **sin ejecutar ningún atajo** qué comandos externos están disponibles en el entorno Fish actual:
