@@ -72,24 +72,24 @@ source_root="$tmp/persistent-sources"
 LINUX_SETUP_SOURCE_DIR="$source_root"
 export LINUX_SETUP_SOURCE_DIR
 mkdir -p "$source_root"
-printf '%s\\n' '# linux-setup modules v1' 'dwm' 'st' 'slock' 'dshortcuts' > "$XDG_STATE_HOME/linux-setup/installed-modules"
+printf '%s\n' '# linux-setup modules v1' 'dwm' 'st' 'slock' 'dshortcuts' > "$XDG_STATE_HOME/linux-setup/installed-modules"
 sh "$script" --verify > "$tmp/result" 2>&1 || :
 grep -Fq 'Fuente no recuperada:' "$tmp/result"
 for name in dwm st slock dshortcuts; do
     mkdir -p "$source_root/$name"
-    printf 'all:\\n\\t@true\\n' > "$source_root/$name/Makefile"
+    printf 'all:\n\t@true\n' > "$source_root/$name/Makefile"
     case "$name" in
         dwm) main=dwm.c ;;
         st) main=st.c ;;
         slock) main=slock.c ;;
         dshortcuts) main=dshortcuts.c ;;
     esac
-    printf '/* fuente */\\n' > "$source_root/$name/$main"
+    printf '/* fuente */\n' > "$source_root/$name/$main"
     if [ "$name" != slock ]; then
-        printf '/* configurable */\\n' > "$source_root/$name/config.h"
+        printf '/* configurable */\n' > "$source_root/$name/config.h"
     fi
     if [ "$name" = dshortcuts ]; then
-        printf '/* menu */\\n' > "$source_root/$name/items.h"
+        printf '/* menu */\n' > "$source_root/$name/items.h"
     fi
 done
 cp "$source_root/dwm/config.h" "$tmp/unedited-before"
