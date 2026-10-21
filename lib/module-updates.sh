@@ -77,13 +77,15 @@ if [ -n "$modules" ]; then
     fi
 fi
 if [ "$doctor" -eq 1 ]; then
+    if [ "$mode" = update ]; then
     [ -d "$HOME/.local/share/linux-doctor" ] && [ ! -L "$HOME/.local/share/linux-doctor" ] || {
         echo 'linux-doctor: no existe una instalación segura.' >&2; exit 1
     }
+    fi
     echo '[REVISAR] linux-doctor: versión instalada y remota se verifican al actualizar.'
 fi
 if [ "$mode" = check ] || [ "$mode" = dry-run ]; then
-    echo 'Consulta o simulación: ningún archivo modificado.'
+    echo 'Simulación: actualizar linux-doctor o linux-tools según selección, sin modificar archivos.'
     exit 0
 fi
 if [ "$LINUX_SETUP_ASSUME_YES" != 1 ]; then
