@@ -53,6 +53,8 @@ test "$out" = 'fish,rotate,dshortcuts,slock'
 # la frase de instrucciones como comando (regresión detectada en Alpine).
 out=$(printf '11\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
 test "$out" = 'fish,doctor'
+out=$(printf '12\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
+test "$out" = 'fish,aliases'
 grep -Fq 'Escribí números separados por comas' "$tmp/menu-stderr"
 if grep -Eq 'not found|no encontrado|command not found' "$tmp/menu-stderr"; then
     echo 'FALLO: el texto de ayuda se ejecutó como comando.' >&2
@@ -63,7 +65,7 @@ out=$(printf '11\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
 test "$out" = 'fish,doctor'
 out=$(printf '\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
 test "$out" = 'fish,rotate,audio,brightness'
-if printf '1,12\n' | sh "$selector" --text > "$tmp/result" 2> "$tmp/error"; then
+if printf '1,13\n' | sh "$selector" --text > "$tmp/result" 2> "$tmp/error"; then
     echo 'FALLO: el selector numérico aceptó opción inválida.' >&2; exit 1
 fi
 test ! -s "$tmp/result"
