@@ -13,12 +13,14 @@ dry_run=0
 assume_yes=0
 reinstall=0
 build_only=0
+save_sources=0
 source_dir=''
 release=/etc/os-release
 
 usage() {
-    echo 'Uso: sh lib/suckless-setup.sh --modules dwm,st,slock [--dry-run] [--yes] [--reinstall] [--build-only] [--source RUTA]'
+    echo 'Uso: sh lib/suckless-setup.sh --modules dwm,st,slock [--dry-run] [--yes] [--reinstall] [--build-only] [--save-sources] [--source RUTA]'
     echo '--source admite un único módulo y nunca altera ese directorio.'
+    echo '--save-sources conserva las fuentes sin compilar ni tocar ejecutables.'
     echo 'Por seguridad, slock solo se instala si se selecciona expresamente.'
 }
 while [ "$#" -gt 0 ]; do
@@ -29,6 +31,7 @@ while [ "$#" -gt 0 ]; do
         --yes) assume_yes=1; shift ;;
         --reinstall) reinstall=1; shift ;;
         --build-only) build_only=1; reinstall=1; shift ;;
+        --save-sources) save_sources=1; shift ;;
         --help|-h) usage; exit 0 ;;
         *) echo "Opción desconocida: $1" >&2; exit 2 ;;
     esac
@@ -46,6 +49,9 @@ while [ -n "$remaining" ]; do
 done
 [ -z "$source_dir" ] || [ "$count" -eq 1 ] || {
     echo 'Error: --source requiere seleccionar un único módulo.' >&2; exit 2
+}
+[ "$save_sources" -eq 0 ] || { [ -z "$source_dir" ] && [ "$build_only" -eq 0 ] && [ "$reinstall" -eq 0 ]; } || {
+    echo 'Error: --save-sources no combina con --source, --build-only o --reinstall.' >&2; exit 2
 }
 if [ "$dry_run" -eq 1 ] && [ -n "${LINUX_SETUP_OS_RELEASE:-}" ]; then
     release=$LINUX_SETUP_OS_RELEASE
@@ -102,10 +108,46 @@ else
 fi
 case ",$selected," in *,slock,*) echo 'ATENCIÓN: slock usa setuid-root (4755). Probalo solo cuando sepas tu contraseña local.' ;; esac
 if [ "$dry_run" -eq 1 ]; then
+    if [ "$save_sources" -eq 1 ]; then
+        echo 'Simulación: conservaría fuentes sin compilar ni modificar ejecutables.'
+        exit 0
+    fi
     echo 'Simulación: no se instalaron paquetes, compilaron programas ni reemplazaron archivos.'
     exit 0
 fi
 [ "$(id -u)" -ne 0 ] || { echo 'Ejecutá como usuario normal, no como root.' >&2; exit 1; }
+if [ "$save_sources" -eq 1 ]; then
+    command -v git >/dev/null 2>&1 || { echo 'Error: falta git.' >&2; exit 1; }
+    for name in $(printf '%s' "$selected" | tr ',' ' '); do
+        existing=$(linux_setup_source_existing "$name") || exit 1
+        if [ -n "$existing" ]; then
+            echo "Fuente existente conservada: $existing"
+            continue
+        fi
+        work=$(mktemp -d)
+        # La copia temporal es descartable; el árbol persistente NO se borra.
+        mkdir "$work/$name"
+        git -C "$work/$name" init -q
+        git -C "$work/$name" remote add origin "https://github.com/agusc01/$name.git"
+        git -C "$work/$name" fetch -q --depth 1 origin "$(revision "$name")"
+        git -C "$work/$name" checkout -q --detach FETCH_HEAD
+        [ "$(git -C "$work/$name" rev-parse HEAD)" = "$(revision "$name")" ] || {
+            echo "Error: commit de $name inesperado." >&2; exit 1
+        }
+        if [ "$name" = dwm ] && ! grep -Fq 'linux-setup: rofi-window-focus' "$work/$name/dwm.c"; then
+            patch -s -d "$work/$name" -p1 < "$root/profiles/dwm/rofi-window-focus.patch" || exit 1
+        fi
+        for config in "$work/$name/config.def.h" "$work/$name/config.h"; do
+            if [ -f "$config" ]; then
+                sed -i 's/Ubuntu:size=/DejaVu Sans Mono:size=/g; s/Liberation Mono:/DejaVu Sans Mono:/g' "$config"
+            fi
+        done
+        linux_setup_source_save "$name" "$work/$name" || exit 1
+        rm -rf "$work"
+    done
+    echo 'Fuentes conservadas. No se recompilaron ni reemplazaron ejecutables.'
+    exit 0
+fi
 if [ -n "$source_dir" ]; then
     [ -d "$source_dir" ] && [ -f "$source_dir/Makefile" ] || {
         echo "Directorio de fuentes inválido: $source_dir" >&2; exit 1
