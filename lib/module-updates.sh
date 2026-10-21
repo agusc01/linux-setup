@@ -11,7 +11,6 @@ known='fish rotate audio brightness wifi bluetooth rofi dshortcuts dwm st slock 
 if [ "$mode" = update ] && [ "$(id -u)" -eq 0 ]; then
     echo 'Ejecutá actualizaciones como usuario normal.' >&2; exit 1
 fi
-command -v git >/dev/null 2>&1 || { echo 'Falta git.' >&2; exit 1; }
 installed=''
 if [ -f "$state" ] && [ ! -L "$state" ]; then
     while IFS= read -r name || [ -n "$name" ]; do
@@ -46,6 +45,10 @@ for name in $selected; do
         *) if [ -n "$modules" ]; then modules="$modules,$name"; else modules=$name; fi ;;
     esac
 done
+# Una consulta de componentes fijados no necesita git ni red.
+if { [ -n "$modules" ] || [ "$doctor" -eq 1 ]; } && [ "$mode" != dry-run ]; then
+    command -v git >/dev/null 2>&1 || { echo 'Falta git para consultar actualizaciones.' >&2; exit 1; }
+fi
 echo 'LINUX-SETUP | ACTUALIZACIONES'
 echo '============================'
 if [ -n "$pinned" ]; then
