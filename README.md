@@ -32,6 +32,16 @@ sh lib/suckless-setup.sh --modules dwm --reinstall
 
 El instalador compila una copia de la fuente editable y respalda el ejecutable anterior antes de reemplazarlo. No sobrescribe el árbol de código. Para `dshortcuts`, su instalación normal usa la copia persistente y conserva `config.h` e `items.h`. Los modos `--dry-run` y `--build-only` no modifican fuentes persistentes.
 
+## Verificación de fuentes editables
+
+`sh install.sh --verify` comprueba los ejecutables y, de forma **independiente**, las fuentes de cada módulo `dwm`, `st`, `slock` o `dshortcuts` registrado en el inventario. Se revisan las carpetas de `~/.local/src/` (o `LINUX_SETUP_SOURCE_DIR`), el `Makefile`, el archivo `.c` principal, los `config.h` aplicables y `items.h` para dshortcuts.
+
+- **OK:** archivos fuente esenciales y configuración editable presentes.
+- **WARN:** faltan las fuentes de una instalación anterior, o falta `config.h` editable. Esto no implica que falle el ejecutable instalado. Para recuperar fuentes: `--save-sources`.
+- **FAIL:** la carpeta existe, pero le faltan archivos esenciales o contiene enlaces simbólicos inesperados. No se siguen enlaces ni se modifica nada.
+
+La verificación es **de solo lectura**: no ejecuta `make`, no recompila, no actualiza y no sobrescribe configuraciones. El resumen incluye ahora también los resultados individuales de fuentes; por eso el número total de controles puede ser mayor que el de módulos instalados.
+
 ## Actualizaciones seguras según el inventario
 
 ```sh
