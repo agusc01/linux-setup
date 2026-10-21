@@ -28,6 +28,8 @@ out=$(MOCK_SELECTION='' sh "$selector" --dialog)
 test "$out" = 'fish,rotate,audio,brightness'
 out=$(MOCK_SELECTION='doctor' sh "$selector" --dialog)
 test "$out" = 'fish,doctor'
+out=$(MOCK_SELECTION='aliases' sh "$selector" --dialog)
+test "$out" = 'fish,aliases'
 out=$(MOCK_SELECTION='slock' sh "$selector" --auto)
 test "$out" = 'fish,slock'
 
@@ -79,6 +81,8 @@ MOCK_SELECTION='st wifi' LINUX_SETUP_OS_RELEASE="$tmp/os-release" \
 grep -Fxq 'Módulos: fish,wifi' "$tmp/result"
 grep -Fxq 'Suckless: st (módulos independientes; sin reemplazos automáticos).' "$tmp/result"
 grep -Fq 'Simulación: no se instalaron paquetes' "$tmp/result"
+LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules aliases --dry-run > "$tmp/result"
+grep -Fxq 'Módulos: fish,aliases' "$tmp/result"
 MOCK_SELECTION='doctor' LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --menu --dry-run > "$tmp/result"
 grep -Fq 'Módulo adicional: linux-doctor' "$tmp/result"
 grep -Fq 'Doctor: simulación' "$tmp/result"
