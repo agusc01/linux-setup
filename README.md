@@ -34,6 +34,43 @@ sh lib/suckless-setup.sh --modules dwm --reinstall
 
 El instalador compila una copia de la fuente editable y respalda el ejecutable anterior antes de reemplazarlo. No sobrescribe el árbol de código. Para `dshortcuts`, su instalación normal usa la copia persistente y conserva `config.h` e `items.h`. Los modos `--dry-run` y `--build-only` no modifican fuentes persistentes.
 
+## Dshortcuts: layouts, gaps y bordes del fork dwm
+
+El perfil actual de `dshortcuts` incorpora **Equipo**, **Rotar** y una nueva entrada **Dwm** con tres submenús:
+
+| Ruta en dshortcuts | Acciones | Cómo se ejecutan |
+| --- | ---: | --- |
+| `Dwm → Layouts` | 14 layouts | `lt-shortcut layout TECLA` |
+| `Dwm → Gaps` | 17 controles | `lt-shortcut gap TECLA` |
+| `Dwm → Bordes` | 3 controles | `lt-shortcut border TECLA` |
+
+La implementación C delega en `lt-shortcut` y `fsignal`, ambos del repositorio `linux-tools`. No importa código Bash, no usa `eval` ni modifica la configuración de dwm. `fsignal` acepta únicamente las señales declaradas en el fork actual de `agusc01/dwm` y requiere `xsetroot` y sesión X11. En Alpine, `linux-tools` prepara `xsetroot` desde `community` temporal cuando se instalan los módulos `rofi` o `shortcuts`; no modifica la lista permanente de repositorios.
+
+### Migración protegida para instalaciones existentes
+
+**Importante:** las fuentes de `dshortcuts` ya preservadas en `~/.local/src/dshortcuts` tienen prioridad. Una recompilación normal **no sobrescribe `items.h`**. Para incorporar los submenús a una instalación anterior:
+
+```sh
+# 1. Actualizar linux-setup y linux-tools (si shortcuts ya está registrado).
+cd ~/linux-setup
+git pull --ff-only origin main
+sh install.sh --update\n# Si shortcuts no estaba instalado, instalalo desde el repositorio linux-tools:\nsh ~/.local/share/linux-setup/linux-tools/install.sh --modules shortcuts
+
+# 2. Ver cambios antes de alterar las fuentes.
+sh lib/dshortcuts-setup.sh --upgrade-menu --dry-run
+
+# 3. Migrar SOLO el viejo items.h exacto, con backup.
+sh lib/dshortcuts-setup.sh --upgrade-menu
+
+# 4. Recompilar dshortcuts utilizando las fuentes persistentes, sin editarlas.
+sh lib/dshortcuts-setup.sh --yes
+sh lib/dshortcuts-setup.sh --verify
+```
+
+La migración no se ejecuta automáticamente. Solo admite el `items.h` **exactamente igual** a la plantilla antigua `profiles/dshortcuts/items-v1.h` o una versión ya actualizada. Si detecta cambios personales, se detiene e informa, sin editar nada. Guarda un respaldo recuperable bajo `~/.local/state/linux-setup/backups/dshortcuts/`. Conserva `config.h`, los demás archivos fuente y el binario durante la migración; este último cambia únicamente en la recompilación solicitada. La actualización de `items.h` y la recompilación se hacen en comandos separados para poder revisar antes de instalar.
+
+En una instalación nueva, se utiliza la plantilla ampliada directamente. La compatibilidad de los submenús se comprueba en CI con Xvfb (Alpine/Ubuntu) y pruebas de claves simuladas en `linux-tools`; las acciones que cambian ventanas solo deben probarse voluntariamente en dwm real.
+
 ## Migración gradual de alias y comandos cortos (POSIX sh + Fish)
 
 Los accesos directos se implementan en [linux-tools](https://github.com/agusc01/linux-tools), no en el repositorio histórico Bash. Los comandos `s0/s1`, `smute/sunmute/stogglemute` y `b0/b1` se instalan junto con `audio` y `brightness`; `rofi_launcher`, `rofi_runner`, `rofi_window` y `rofi_menu` junto con `rofi`. Son ejecutables POSIX `sh`, reconocibles y autocompletables por Fish.

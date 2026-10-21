@@ -21,7 +21,7 @@ jobs:
         run: '! grep -E "SCRIPT_DSHORTCUTS|SCRIPT_ROFI|~/.bash_scripts" profiles/dshortcuts/items.h'
       - name: Navigate into nested menus under Xvfb without crashing
         run: |
-          for path in m r "m v" "m b"; do
+          for path in m r d "m v" "m b" "d l" "d g" "d b"; do
             code=0
             # timeout=124 means the menu stayed open, waiting for keyboard input.
             xvfb-run -a timeout 3s "$HOME/.local/bin/dshortcuts" $path || code=$?

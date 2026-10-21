@@ -11,6 +11,7 @@ dry_run=0
 yes=0
 verify=0
 save_sources=0
+upgrade_menu=0
 for arg in "$@"; do
     : "$arg"
 done
@@ -20,6 +21,7 @@ while [ "$#" -gt 0 ]; do
         --yes) yes=1 ;;
         --verify) verify=1 ;;
         --save-sources) save_sources=1 ;;
+        --upgrade-menu) upgrade_menu=1 ;;
         --source)
             [ "$#" -ge 2 ] || { echo 'Error: --source requiere ruta.' >&2; exit 2; }
             source_dir=$2; shift ;;
@@ -27,6 +29,19 @@ while [ "$#" -gt 0 ]; do
     esac
     shift
 done
+# La actualización del menú es una operación explícita sin recompilación.
+# Rechazar combinaciones para no escribir fuentes o ejecutables por sorpresa.
+if [ "$upgrade_menu" -eq 1 ]; then
+    [ "$verify" -eq 0 ] && [ "$save_sources" -eq 0 ] && [ -z "$source_dir" ] && [ "$yes" -eq 0 ] || {
+        echo 'Error: --upgrade-menu solo se combina con --dry-run.' >&2; exit 2
+    }
+    if [ "$dry_run" -eq 1 ]; then
+        sh "$root/lib/dshortcuts-menu-upgrade.sh" --dry-run
+    else
+        sh "$root/lib/dshortcuts-menu-upgrade.sh"
+    fi
+    exit $?
+fi
 prefix="$HOME/.local"
 launcher="$prefix/bin/dshortcuts"
 data="$prefix/share/linux-setup/dshortcuts"
@@ -53,7 +68,7 @@ if [ "$verify" -eq 1 ]; then
 fi
 
 echo 'dshortcuts: fork agusc01/dshortcuts (commit fijado para instalación reproducible).'
-echo 'Menú C moderno: volumen, brillo, rotación, Wi-Fi, Bluetooth y Rofi.'
+echo 'Menú C moderno: volumen, brillo, rotación, Wi-Fi, Bluetooth, Rofi y controles de dwm.'
 echo "Launcher: $launcher | compilado: $binary"
 echo 'No se cambian el fork, keys.h de dwm ni las configuraciones privadas.'
 echo 'Fuentes persistentes: ~/.local/src/dshortcuts (sin sobrescribir cambios). '
