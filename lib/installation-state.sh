@@ -3,7 +3,7 @@
 set -eu
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/linux-setup"
 state="$state_dir/installed-modules"
-known='fish rotate audio brightness wifi bluetooth rofi dshortcuts dwm st slock doctor'
+known='fish rotate audio brightness wifi bluetooth rofi aliases dshortcuts dwm st slock doctor'
 usage() { echo 'Uso: sh lib/installation-state.sh --record MODULOS | --verify' >&2; }
 valid() {
     case " $known " in *" $1 "*) return 0 ;; *) return 1 ;; esac
@@ -136,6 +136,28 @@ verify_one() {
         rofi)
             if has rofi; then result OK rofi 'Lanzador disponible'
             else result FAIL rofi 'No se encontró rofi'; fi ;;
+        aliases)
+            missing=''
+            for alias_name in g ga gaA gau gs gss gct gctm gpull gpullremote gamend; do
+                file="$HOME/.local/bin/$alias_name"
+                if [ ! -x "$file" ] || [ -L "$file" ] ||
+                   ! grep -Fqx '# linux-tools-managed: agusc01/linux-tools' "$file"; then
+                    missing="$missing $alias_name"
+                fi
+            done
+            for alias_name in dw dk dc pic cdwm cst cslock cdshortcuts; do
+                file="${XDG_CONFIG_HOME:-$HOME/.config}/fish/functions/$alias_name.fish"
+                if [ ! -f "$file" ] || [ -L "$file" ] ||
+                   ! grep -Fqx '# linux-tools-managed: agusc01/linux-tools' "$file" ||
+                   ! has fish || ! fish -c "functions -q -- $alias_name"; then
+                    missing="$missing $alias_name"
+                fi
+            done
+            if [ -z "$missing" ]; then
+                result OK aliases 'Atajos Git y navegación Fish disponibles'
+            else
+                result FAIL aliases "Faltan nombres:$missing"
+            fi ;;
         dshortcuts)
             if has dshortcuts; then result OK dshortcuts 'Lanzador disponible'
             else result FAIL dshortcuts 'No se encontró dshortcuts'; fi ;;

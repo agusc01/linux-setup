@@ -28,6 +28,8 @@ out=$(MOCK_SELECTION='' sh "$selector" --dialog)
 test "$out" = 'fish,rotate,audio,brightness'
 out=$(MOCK_SELECTION='doctor' sh "$selector" --dialog)
 test "$out" = 'fish,doctor'
+out=$(MOCK_SELECTION='aliases' sh "$selector" --dialog)
+test "$out" = 'fish,aliases'
 out=$(MOCK_SELECTION='slock' sh "$selector" --auto)
 test "$out" = 'fish,slock'
 
@@ -51,6 +53,8 @@ test "$out" = 'fish,rotate,dshortcuts,slock'
 # la frase de instrucciones como comando (regresión detectada en Alpine).
 out=$(printf '11\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
 test "$out" = 'fish,doctor'
+out=$(printf '12\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
+test "$out" = 'fish,aliases'
 grep -Fq 'Escribí números separados por comas' "$tmp/menu-stderr"
 if grep -Eq 'not found|no encontrado|command not found' "$tmp/menu-stderr"; then
     echo 'FALLO: el texto de ayuda se ejecutó como comando.' >&2
@@ -61,7 +65,7 @@ out=$(printf '11\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
 test "$out" = 'fish,doctor'
 out=$(printf '\n' | sh "$selector" --text 2> "$tmp/menu-stderr")
 test "$out" = 'fish,rotate,audio,brightness'
-if printf '1,12\n' | sh "$selector" --text > "$tmp/result" 2> "$tmp/error"; then
+if printf '1,13\n' | sh "$selector" --text > "$tmp/result" 2> "$tmp/error"; then
     echo 'FALLO: el selector numérico aceptó opción inválida.' >&2; exit 1
 fi
 test ! -s "$tmp/result"
@@ -79,6 +83,8 @@ MOCK_SELECTION='st wifi' LINUX_SETUP_OS_RELEASE="$tmp/os-release" \
 grep -Fxq 'Módulos: fish,wifi' "$tmp/result"
 grep -Fxq 'Suckless: st (módulos independientes; sin reemplazos automáticos).' "$tmp/result"
 grep -Fq 'Simulación: no se instalaron paquetes' "$tmp/result"
+LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules aliases --dry-run > "$tmp/result"
+grep -Fxq 'Módulos: fish,aliases' "$tmp/result"
 MOCK_SELECTION='doctor' LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --menu --dry-run > "$tmp/result"
 grep -Fq 'Módulo adicional: linux-doctor' "$tmp/result"
 grep -Fq 'Doctor: simulación' "$tmp/result"
