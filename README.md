@@ -22,6 +22,8 @@ sh lib/suckless-setup.sh --modules dwm,st,slock --save-sources
 sh lib/dshortcuts-setup.sh --save-sources
 ```
 
+Si una carpeta de `dwm` o `st` ya existe pero no tiene `config.h`, `--save-sources` completa **únicamente ese archivo** copiando `config.def.h`. No sobrescribe un `config.h` existente ni recompila los ejecutables. Si falta también `config.def.h` o hay enlaces simbólicos inesperados, informa el problema sin reemplazar fuentes.
+
 Solo utiliza Git para obtener los commits fijados y `patch` para aplicar las integraciones correspondientes. No necesita `doas`. Las copias recuperadas reproducen el código fijado y sus parches, no extraen `config.h` de un binario existente.
 
 Luego podés editar, por ejemplo, `~/.local/src/dwm/config.h` y **recompilar expresamente** con:
