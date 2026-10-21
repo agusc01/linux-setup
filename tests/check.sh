@@ -25,6 +25,7 @@ sh -n "$root/lib/module-selector.sh"
 sh -n "$root/lib/linux-doctor-setup.sh"
 sh -n "$root/tests/module-selector.sh"
 sh -n "$root/lib/installation-state.sh"
+sh -n "$root/lib/module-updates.sh"
 sh -n "$root/tests/installation-state.sh"
 echo "      [OK] Sintaxis POSIX de instaladores y pruebas."
 echo
@@ -135,6 +136,17 @@ LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules doctor 
 grep -Fq 'Módulo adicional: linux-doctor' "$tmp/result"
 grep -Fq 'Doctor: simulación' "$tmp/result"
 sh "$root/lib/linux-doctor-setup.sh" --dry-run | grep -Fq 'sin cambios ni reparaciones'
+# Sólo módulos fijados: consulta sin red y sin modificar el inventario.
+mkdir -p "$tmp/update-state/linux-setup"
+printf '%s\\n' '# linux-setup modules v1' 'dwm' 'st' > "$tmp/update-state/linux-setup/installed-modules"
+XDG_STATE_HOME="$tmp/update-state" sh "$root/install.sh" --check-updates > "$tmp/check-updates"
+grep -Fq '[FIJADOS] dwm st' "$tmp/check-updates"
+grep -Fq 'ningún archivo modificado' "$tmp/check-updates"
+XDG_STATE_HOME="$tmp/update-state" sh "$root/install.sh" --update --dry-run > "$tmp/update-dry-run"
+grep -Fq 'ningún archivo modificado' "$tmp/update-dry-run"
+if XDG_STATE_HOME="$tmp/update-state" sh "$root/install.sh" --modules doctor --check-updates > /dev/null 2>&1; then
+    echo 'FALLO: el consultor aceptó un módulo no inventariado.' >&2; exit 1
+fi
 LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules doctor --update --dry-run > "$tmp/result"
 grep -Fq 'Simulación: actualizar linux-doctor' "$tmp/result"
 if LINUX_SETUP_OS_RELEASE="$tmp/os-release" sh "$root/install.sh" --modules dwm,doctor --update --dry-run >/dev/null 2>&1; then
