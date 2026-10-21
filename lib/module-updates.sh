@@ -28,7 +28,7 @@ if [ -n "$filter" ]; then
     for name in $(printf '%s' "$filter" | tr ',' ' '); do
         case " $known " in *" $name "*) ;; *) echo "Módulo desconocido: $name" >&2; exit 2 ;; esac
         case " $installed " in *" $name "*) ;; *)
-            [ "$name" = doctor ] || { echo "No registrado: $name" >&2; exit 2; } ;;
+            { [ "$name" = doctor ] && [ "$mode" != check ]; } || { echo "No registrado: $name" >&2; exit 2; } ;;
         esac
         selected="$selected $name"
     done
