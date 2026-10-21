@@ -4,8 +4,9 @@ set -eu
 mode=$1
 filter=$2
 root=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
-state="$HOME/.local/state/linux-setup/installed-modules"
-tools_dir="$HOME/.local/share/linux-setup/linux-tools"
+state="${XDG_STATE_HOME:-$HOME/.local/state}/linux-setup/installed-modules"
+tools_dir=${LINUX_SETUP_TOOLS_DIR:-"$HOME/.local/share/linux-setup/linux-tools"}
+: "${LINUX_SETUP_ASSUME_YES:=0}"
 known='fish rotate audio brightness wifi bluetooth rofi dshortcuts dwm st slock doctor'
 [ "$(id -u)" -ne 0 ] || { echo 'Ejecutá como usuario normal.' >&2; exit 1; }
 command -v git >/dev/null 2>&1 || { echo 'Falta git.' >&2; exit 1; }
@@ -19,6 +20,9 @@ if [ -f "$state" ] && [ ! -L "$state" ]; then
 fi
 if [ -n "$filter" ]; then
     selected=''
+    case "$filter" in
+        ,*|*,|*,,*) echo 'Lista de módulos vacía o mal formada.' >&2; exit 2 ;;
+    esac
     for name in $(printf '%s' "$filter" | tr ',' ' '); do
         case " $known " in *" $name "*) ;; *) echo "Módulo desconocido: $name" >&2; exit 2 ;; esac
         case " $installed " in *" $name "*) ;; *)
@@ -72,7 +76,12 @@ if [ -n "$modules" ]; then
         echo "[DISPONIBLE] linux-tools $old -> $remote"
     fi
 fi
-[ "$doctor" -eq 0 ] || echo '[REVISAR] linux-doctor: compara archivos durante --update.'
+if [ "$doctor" -eq 1 ]; then
+    [ -d "$HOME/.local/share/linux-doctor" ] && [ ! -L "$HOME/.local/share/linux-doctor" ] || {
+        echo 'linux-doctor: no existe una instalación segura.' >&2; exit 1
+    }
+    echo '[REVISAR] linux-doctor: versión instalada y remota se verifican al actualizar.'
+fi
 if [ "$mode" = check ] || [ "$mode" = dry-run ]; then
     echo 'Consulta o simulación: ningún archivo modificado.'
     exit 0
