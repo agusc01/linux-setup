@@ -76,13 +76,32 @@ if [ -n "$modules" ]; then
         echo "[DISPONIBLE] linux-tools $old -> $remote"
     fi
 fi
+doctor_changed=0
 if [ "$doctor" -eq 1 ]; then
-    if [ "$mode" = update ]; then
-    [ -d "$HOME/.local/share/linux-doctor" ] && [ ! -L "$HOME/.local/share/linux-doctor" ] || {
-        echo 'linux-doctor: no existe una instalación segura.' >&2; exit 1
-    }
+    app="$HOME/.local/share/linux-doctor"
+    if [ -d "$app" ] && [ ! -L "$app" ]; then
+        if [ "$mode" = dry-run ]; then
+            echo '[REVISAR] linux-doctor: simulación sin descarga ni cambios.'
+        else
+            work=$(mktemp -d)
+            trap 'rm -rf "$work"' EXIT HUP INT TERM
+            git clone --quiet --depth 1 --single-branch --branch main https://github.com/agusc01/linux-doctor.git "$work/doctor"
+            doctor_changed=0
+            for file in doctor.sh lib/core.sh lib/services.sh; do
+                if ! cmp -s "$app/$file" "$work/doctor/$file"; then doctor_changed=1; fi
+            done
+            if [ "$doctor_changed" -eq 0 ]; then
+                echo '[OK] linux-doctor actualizado.'
+            else
+                echo '[DISPONIBLE] linux-doctor tiene archivos nuevos.'
+            fi
+        fi
+    else
+        if [ "$mode" = update ]; then
+            echo 'linux-doctor: no hay instalación segura; no se reemplaza.' >&2; exit 1
+        fi
+        echo '[PENDIENTE] linux-doctor no tiene una instalación verificable.'
     fi
-    echo '[REVISAR] linux-doctor: versión instalada y remota se verifican al actualizar.'
 fi
 if [ "$mode" = check ] || [ "$mode" = dry-run ]; then
     echo 'Simulación: actualizar linux-doctor o linux-tools según selección, sin modificar archivos.'
@@ -130,7 +149,7 @@ if [ "$changed" -eq 1 ]; then
         exit 1
     fi
 fi
-if [ "$doctor" -eq 1 ]; then
+if [ "$doctor_changed" -eq 1 ]; then
     sh "$root/lib/linux-doctor-setup.sh" --update
 fi
 echo 'Actualización terminada. Ejecutá sh install.sh --verify.'
