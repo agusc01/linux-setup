@@ -4,6 +4,7 @@
 set -eu
 root=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 . "$root/lib/dshortcuts-deps.sh"
+. "$root/lib/source-preserve.sh"
 version=2f29a3dffa606f8823d80a6a7ff381ff0a1b1ab6
 source_dir=''
 dry_run=0
@@ -50,6 +51,7 @@ echo 'dshortcuts: fork agusc01/dshortcuts (commit fijado para instalación repro
 echo 'Menú C moderno: volumen, brillo, rotación, Wi-Fi, Bluetooth y Rofi.'
 echo "Launcher: $launcher | compilado: $binary"
 echo 'No se cambian el fork, keys.h de dwm ni las configuraciones privadas.'
+echo 'Fuentes persistentes: ~/.local/src/dshortcuts (sin sobrescribir cambios). '
 if [ "$dry_run" -eq 1 ]; then
     . /etc/os-release
     printf 'Paquetes gestionados automáticamente (%s): git %s\n' "$ID" "$(dshortcuts_packages "$ID")"
@@ -94,11 +96,18 @@ temp=$(mktemp -d)
 trap 'rm -rf "$temp"' EXIT HUP INT TERM
 work="$temp/dshortcuts"
 mkdir "$work"
+saved=''
+if [ -z "$source_dir" ]; then
+    saved=$(linux_setup_source_existing dshortcuts) || exit 1
+fi
 if [ -n "$source_dir" ]; then
     [ -f "$source_dir/Makefile" ] && [ -f "$source_dir/dshortcuts.c" ] || {
         echo 'Error: --source no contiene el fork dshortcuts.' >&2; exit 1
     }
     cp -R "$source_dir/." "$work/"
+elif [ -n "$saved" ]; then
+    echo "Usando copia persistente sin modificar: $saved"
+    cp -R "$saved/." "$work/"
 else
     git -C "$work" init -q
     git -C "$work" remote add origin https://github.com/agusc01/dshortcuts.git
@@ -108,13 +117,17 @@ else
         echo 'Error: el commit descargado no coincide con la versión fijada.' >&2; exit 1
     }
 fi
-cp "$root/profiles/dshortcuts/config.h" "$work/config.h"
-cp "$root/profiles/dshortcuts/items.h" "$work/items.h"
-patch -s -d "$work" -p1 < "$root/profiles/dshortcuts/safe.patch" || {
-    echo 'Error: el código original cambió o el parche de seguridad no se pudo aplicar.' >&2; exit 1
-}
+# No pisar las plantillas editadas ni volver a aplicar el parche.
+if [ -z "$saved" ]; then
+    cp "$root/profiles/dshortcuts/config.h" "$work/config.h"
+    cp "$root/profiles/dshortcuts/items.h" "$work/items.h"
+    patch -s -d "$work" -p1 < "$root/profiles/dshortcuts/safe.patch" || {
+        echo 'Error: el código original cambió o el parche de seguridad no se pudo aplicar.' >&2; exit 1
+    }
+fi
 make -C "$work" dshortcuts
 "$work/dshortcuts" -v
+linux_setup_source_save dshortcuts "$work"
 
 mkdir -p "$prefix/bin" "$data"
 if [ ! -e "$marker" ]; then printf '%s\n' "$header" > "$marker"; fi
