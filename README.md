@@ -2,6 +2,20 @@
 
 Instalador de arranque para **Alpine Linux y Debian/Ubuntu**, con **Fish obligatorio** y módulos independientes de [linux-tools](https://github.com/agusc01/linux-tools).
 
+## Verificar la instalación real
+
+`sh tests/check.sh` prueba el **código del instalador**; `sh install.sh --verify` revisa **los módulos que efectivamente se instalaron** en la cuenta actual:
+
+```sh
+sh install.sh --verify
+```
+
+Al finalizar una instalación exitosa, `linux-setup` mantiene un inventario acumulativo en `~/.local/state/linux-setup/installed-modules` (o bajo `XDG_STATE_HOME` cuando está configurado). Se guarda **solo después de instalar**, no durante `--dry-run` ni si algún módulo falla. No se incluye un componente simplemente por estar disponible en el sistema.
+
+La verificación es de **solo lectura** y muestra `OK`, `WARN` o `FAIL` por cada módulo del inventario: presencia de Fish y PATH, funciones de rotación, herramientas de audio, Wi-Fi, Bluetooth, brillo, Rofi, dshortcuts, dwm, st, slock y linux-doctor. La disponibilidad de herramientas no implica que el hardware esté operativo; las verificaciones funcionales de audio, Wi-Fi y Bluetooth corresponden a diagnósticos complementarios. Si está instalado `linux-doctor`, se agrega su resumen sin duplicar sus resultados como fallos del inventario.
+
+Si una instalación anterior no tiene registro, se informa y se solicita reinstalar los módulos deseados para crearlo; **no se inventa un historial**. Al terminar la instalación se ejecuta una verificación automática, y sus errores se muestran como advertencia de revisión sin ocultar los módulos correctamente instalados.
+
 ## Diagnóstico opcional con linux-doctor
 
 El repositorio independiente [linux-doctor](https://github.com/agusc01/linux-doctor) puede instalarse desde el selector (opción **doctor**) o con `sh install.sh --modules doctor`. No requiere Xorg, Fish en ejecución ni permisos root propios; la instalación general de `linux-setup` sigue preparando Fish como dependencia habitual.
