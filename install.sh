@@ -131,6 +131,7 @@ want_brightness=0
 want_wifi=0
 want_bluetooth=0
 want_rofi=0
+want_aliases=0
 want_dshortcuts=0
 want_dwm=0
 want_st=0
@@ -149,6 +150,7 @@ while [ -n "$requested" ]; do
         wifi) want_wifi=1 ;;
         bluetooth) want_bluetooth=1 ;;
         rofi) want_rofi=1 ;;
+        aliases) want_aliases=1 ;;
         dshortcuts) want_dshortcuts=1 ;;
         dwm) want_dwm=1 ;;
         st) want_st=1 ;;
@@ -175,6 +177,7 @@ selected=fish
 [ "$want_wifi" -eq 0 ] || selected="$selected,wifi"
 [ "$want_bluetooth" -eq 0 ] || selected="$selected,bluetooth"
 [ "$want_rofi" -eq 0 ] || selected="$selected,rofi"
+[ "$want_aliases" -eq 0 ] || selected="$selected,aliases"
 if [ "$want_dshortcuts" -eq 1 ]; then
     selected="$selected,shortcuts"
 fi
@@ -342,6 +345,7 @@ recorded=fish
 [ "$want_wifi" -eq 0 ] || recorded="$recorded,wifi"
 [ "$want_bluetooth" -eq 0 ] || recorded="$recorded,bluetooth"
 [ "$want_rofi" -eq 0 ] || recorded="$recorded,rofi"
+[ "$want_aliases" -eq 0 ] || recorded="$recorded,aliases"
 [ "$want_dshortcuts" -eq 0 ] || recorded="$recorded,dshortcuts"
 [ "$want_dwm" -eq 0 ] || recorded="$recorded,dwm"
 [ "$want_st" -eq 0 ] || recorded="$recorded,st"
