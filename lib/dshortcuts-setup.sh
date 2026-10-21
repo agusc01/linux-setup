@@ -10,6 +10,7 @@ source_dir=''
 dry_run=0
 yes=0
 verify=0
+save_sources=0
 for arg in "$@"; do
     : "$arg"
 done
@@ -18,6 +19,7 @@ while [ "$#" -gt 0 ]; do
         --dry-run) dry_run=1 ;;
         --yes) yes=1 ;;
         --verify) verify=1 ;;
+        --save-sources) save_sources=1 ;;
         --source)
             [ "$#" -ge 2 ] || { echo 'Error: --source requiere ruta.' >&2; exit 2; }
             source_dir=$2; shift ;;
@@ -39,6 +41,9 @@ managed_data() {
     [ -f "$marker" ] && [ ! -L "$marker" ] &&
         grep -Fqx "$header" "$marker"
 }
+[ "$save_sources" -eq 0 ] || [ -z "$source_dir" ] || {
+    echo 'Error: --save-sources no admite --source.' >&2; exit 2
+}
 if [ "$verify" -eq 1 ]; then
     [ -x "$binary" ] && managed_launcher && managed_data || {
         echo 'Error: dshortcuts no está instalado o hay archivos ajenos.' >&2; exit 1
@@ -53,12 +58,43 @@ echo "Launcher: $launcher | compilado: $binary"
 echo 'No se cambian el fork, keys.h de dwm ni las configuraciones privadas.'
 echo 'Fuentes persistentes: ~/.local/src/dshortcuts (sin sobrescribir cambios). '
 if [ "$dry_run" -eq 1 ]; then
+    if [ "$save_sources" -eq 1 ]; then
+        echo 'Simulación: conservar fuentes de dshortcuts sin recompilar ni modificar ejecutables.'
+        exit 0
+    fi
     . /etc/os-release
     printf 'Paquetes gestionados automáticamente (%s): git %s\n' "$ID" "$(dshortcuts_packages "$ID")"
     echo 'Simulación: compilaría con overlays locales y verificaría dshortcuts -v.'
     exit 0
 fi
 [ "$(id -u)" -ne 0 ] || { echo 'Error: ejecutá como usuario normal.' >&2; exit 1; }
+if [ "$save_sources" -eq 1 ]; then
+    saved=$(linux_setup_source_existing dshortcuts) || exit 1
+    if [ -n "$saved" ]; then
+        echo "Fuentes conservadas: $saved (sin cambios)"
+        exit 0
+    fi
+    command -v git >/dev/null 2>&1 && command -v patch >/dev/null 2>&1 || {
+        echo 'Error: faltan git o patch para preparar fuentes.' >&2; exit 1
+    }
+    temp=$(mktemp -d)
+    trap 'rm -rf "$temp"' EXIT HUP INT TERM
+    work="$temp/dshortcuts"
+    mkdir "$work"
+    git -C "$work" init -q
+    git -C "$work" remote add origin https://github.com/agusc01/dshortcuts.git
+    git -C "$work" fetch -q --depth 1 origin "$version"
+    git -C "$work" checkout -q --detach FETCH_HEAD
+    [ "$(git -C "$work" rev-parse HEAD)" = "$version" ] || {
+        echo 'Error: revisión inesperada de dshortcuts.' >&2; exit 1
+    }
+    cp "$root/profiles/dshortcuts/config.h" "$work/config.h"
+    cp "$root/profiles/dshortcuts/items.h" "$work/items.h"
+    patch -s -d "$work" -p1 < "$root/profiles/dshortcuts/safe.patch" || exit 1
+    linux_setup_source_save dshortcuts "$work"
+    echo 'Fuentes guardadas sin modificar el ejecutable existente.'
+    exit 0
+fi
 if [ -e "$launcher" ] || [ -L "$launcher" ]; then
     managed_launcher || {
         echo "Conflicto: $launcher no fue creado por linux-setup. No se sobrescribe." >&2
