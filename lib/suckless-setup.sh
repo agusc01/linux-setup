@@ -4,6 +4,7 @@
 set -eu
 root=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 . "$root/lib/dshortcuts-deps.sh"
+. "$root/lib/source-preserve.sh"
 PATH="$PATH:/sbin:/usr/sbin:/usr/local/sbin"
 export PATH
 
@@ -89,7 +90,8 @@ fi
 case ",$selected," in
     *,dwm,*) sh "$root/lib/xorg-setup.sh" --dry-run ;;
 esac
-echo 'Fuentes oficiales: forks agusc01 fijados por commit; no se modifica el repositorio original.'
+echo 'Fuentes: se conservarán en ~/.local/src; nunca se borran ni sobrescriben fuentes existentes.'
+echo 'Los forks agusc01 usan commits fijados y sus configuraciones locales se respetan.'
 if [ -n "$source_dir" ]; then echo "Fuente local (solo lectura): $source_dir"; fi
 if [ "$build_only" -eq 1 ]; then
     echo 'Modo compilación: no se reemplazarán ejecutables ni se modificará terminfo.'
@@ -180,8 +182,15 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 for name in $to_install; do
     echo "Compilando $name..."
     mkdir "$work/$name"
+    saved=''
+    if [ -z "$source_dir" ]; then
+        saved=$(linux_setup_source_existing "$name") || exit 1
+    fi
     if [ -n "$source_dir" ]; then
         cp -R "$source_dir/." "$work/$name/"
+    elif [ -n "$saved" ]; then
+        echo "Usando copia persistente sin modificar: $saved"
+        cp -R "$saved/." "$work/$name/"
     else
         git -C "$work/$name" init -q
         git -C "$work/$name" remote add origin "https://github.com/agusc01/$name.git"
@@ -204,7 +213,7 @@ for name in $to_install; do
     fi
     # Fuente garantizada en instalaciones mínimas: no modificar forks ni fuentes locales.
     # Tanto dwm (Ubuntu) como st (Liberation Mono) usan DejaVu empaquetada.
-    if [ -z "$source_dir" ]; then
+    if [ -z "$source_dir" ] && [ -z "$saved" ]; then
         for config in "$work/$name/config.def.h" "$work/$name/config.h"; do
             if [ -f "$config" ]; then
                 sed -i 's/Ubuntu:size=/DejaVu Sans Mono:size=/g; s/Liberation Mono:/DejaVu Sans Mono:/g' "$config"
@@ -219,6 +228,14 @@ if [ "$build_only" -eq 1 ]; then
     echo 'OK: todos los módulos seleccionados compilaron; no se modificaron ejecutables.'
     exit 0
 fi
+# Publicar una copia completa y ya preparada al primer instalar. La instalación
+# posterior usa esta copia como fuente, por lo que el config.h editado se respeta.
+# --source explícito es de solo lectura, pero también guardamos la copia usada
+# si todavía no existe una fuente persistente.
+for name in $to_install; do
+    linux_setup_source_save "$name" "$work/$name" || exit 1
+done
+
 
 # Preparar terminfo antes de reemplazar st, para evitar dejar un st sin descripción de terminal.
 case " $to_install " in *" st "*|"st "*|*" st"|"st")
