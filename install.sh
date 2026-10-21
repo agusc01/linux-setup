@@ -4,6 +4,7 @@
 set -eu
 dry_run=0
 update_mode=0
+check_updates=0
 verify_mode=0
 assume_yes=0
 modules=''
@@ -15,7 +16,7 @@ release=/etc/os-release
 
 usage() {
     printf '%s\n' \
-        'Uso: sh install.sh [--menu|--text-menu|--modules LISTA] [--dry-run] [--verify] [--update] [--yes] [--tools-dir RUTA]' \
+        'Uso: sh install.sh [--menu|--text-menu|--modules LISTA] [--dry-run] [--verify] [--check-updates] [--update] [--yes] [--tools-dir RUTA]' \
         'Fish es obligatorio. --menu usa dialog o alternativa de texto si todavía no está disponible.' \
         '--modules conserva compatibilidad con scripts y CI. No configura doas.'
 }
@@ -32,16 +33,41 @@ while [ "$#" -gt 0 ]; do
         --text-menu) menu_requested=1; menu_mode=text; shift ;;
         --yes) assume_yes=1; shift ;;
         --update) update_mode=1; shift ;;
+        --check-updates) check_updates=1; shift ;;
         --verify) verify_mode=1; shift ;;
         --dry-run) dry_run=1; shift ;;
         *) echo "Error: opción desconocida $1" >&2; exit 2 ;;
     esac
 done
 
+# Consultar o aplicar actualizaciones sin activar el selector ni instalar paquetes.
+if [ "$check_updates" -eq 1 ] || [ "$update_mode" -eq 1 ]; then
+    [ "$menu_requested" -eq 0 ] && [ "$verify_mode" -eq 0 ] || {
+        echo 'Error: las actualizaciones no se combinan con --menu o --verify.' >&2; exit 2
+    }
+    [ "$check_updates" -eq 0 ] || [ "$update_mode" -eq 0 ] || {
+        echo 'Error: --check-updates y --update son excluyentes.' >&2; exit 2
+    }
+    updater="$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/module-updates.sh"
+    if [ "$check_updates" -eq 1 ]; then
+        [ "$assume_yes" -eq 0 ] && [ "$dry_run" -eq 0 ] || {
+            echo 'Error: --check-updates es siempre de solo lectura.' >&2; exit 2
+        }
+        sh "$updater" check "$modules"
+    else
+        if [ "$dry_run" -eq 1 ]; then
+            sh "$updater" dry-run "$modules"
+        else
+            LINUX_SETUP_ASSUME_YES="$assume_yes" sh "$updater" update "$modules"
+        fi
+    fi
+    exit $?
+fi
+
 # La verificación es independiente del instalador y no solicita permisos.
 if [ "$verify_mode" -eq 1 ]; then
     [ -z "$modules" ] && [ "$menu_requested" -eq 0 ] && [ "$update_mode" -eq 0 ] &&
-    [ "$dry_run" -eq 0 ] && [ "$assume_yes" -eq 0 ] || {
+    [ "$dry_run" -eq 0 ] && [ "$assume_yes" -eq 0 ] && [ "$check_updates" -eq 0 ] || {
         echo 'Error: --verify no se combina con opciones de instalación.' >&2
         exit 2
     }
@@ -131,22 +157,6 @@ while [ -n "$requested" ]; do
         *) echo "Módulo no disponible: $item" >&2; exit 2 ;;
     esac
 done
-
-# Las actualizaciones son opt-in y no reinstalan Fish ni otros módulos.
-if [ "$update_mode" -eq 1 ]; then
-    [ "$modules" = doctor ] && [ "$menu_requested" -eq 0 ] || {
-        echo 'Error: --update requiere exclusivamente --modules doctor.' >&2
-        exit 2
-    }
-    updater="$(CDPATH= cd "$(dirname "$0")" && pwd)/lib/linux-doctor-setup.sh"
-    if [ "$dry_run" -eq 1 ]; then
-        echo 'Simulación: actualizar linux-doctor (sin modificar otros módulos).'
-        sh "$updater" --dry-run
-    else
-        sh "$updater" --update
-    fi
-    exit 0
-fi
 
 # Un menú completo necesita los comandos de sus submenús.
 # No se copia ni parchea el fork original en GitHub.
