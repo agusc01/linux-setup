@@ -61,6 +61,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Refresh APT indices before compilation
+        run: sudo apt-get update
       - name: Build dwm, st and slock without system installation
         run: sh lib/suckless-setup.sh --modules dwm,st,slock --build-only --yes
 
@@ -71,9 +73,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Prepare build environment using stable main + temporary community
         run: |
-          apk add --no-cache build-base git pkgconf libx11-dev libxft-dev libxinerama-dev libxrender-dev libxcomposite-dev libxext-dev fontconfig-dev freetype-dev libxrandr-dev linux-headers ncurses xorg-server xinit ca-certificates
+          apk add --no-cache build-base git patch su-exec pkgconf libx11-dev libxft-dev libxinerama-dev libxrender-dev libxcomposite-dev libxext-dev fontconfig-dev freetype-dev font-dejavu libxrandr-dev linux-headers ncurses xorg-server xinit ca-certificates
           apk add --no-cache --repository https://dl-cdn.alpinelinux.org/alpine/v3.24/community imlib2-dev
       - name: Verify all pinned forks build as unprivileged user
         run: |
           adduser -D tester
-          su tester -s /bin/sh -c "cd '$GITHUB_WORKSPACE' && sh lib/suckless-setup.sh --modules dwm,st,slock --build-only --yes"
+          # su de BusyBox puede requerir setuid dentro de contenedores.
+          # su-exec baja privilegios sin alterar la configuración de permisos.
+          su-exec tester env HOME=/home/tester sh -c "cd '$GITHUB_WORKSPACE' && sh lib/suckless-setup.sh --modules dwm,st,slock --build-only --yes"
