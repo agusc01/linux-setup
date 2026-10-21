@@ -53,3 +53,42 @@ linux_setup_source_save() (
     mv "$tmp" "$dest"
     echo "Fuentes conservadas: $dest"
 )
+
+# Completar únicamente config.h ausente. Nunca modificar uno ya existente.
+# En algunos forks config.h se genera con make desde config.def.h, por lo
+# que preservar las fuentes antes de compilar deja el archivo sin crear.
+linux_setup_source_ensure_config() (
+    set -eu
+    name=$1
+    case "$name" in dwm|st) ;; *) return 0 ;; esac
+    directory="$(linux_setup_source_root)/$name"
+    target="$directory/config.h"
+    template="$directory/config.def.h"
+    [ ! -L "$directory" ] && [ -d "$directory" ] || {
+        echo "Error: carpeta de fuente inválida: $directory" >&2; exit 1
+    }
+    if [ -L "$target" ]; then
+        echo "Error: config.h enlazado; no se modifica: $target" >&2; exit 1
+    fi
+    if [ -e "$target" ]; then
+        [ -f "$target" ] || { echo "Error: config.h no es archivo regular: $target" >&2; exit 1; }
+        echo "Configuración existente conservada: $target"
+        exit 0
+    fi
+    [ -f "$template" ] && [ ! -L "$template" ] || {
+        echo "Error: falta config.def.h regular para crear $target; no se modifica nada." >&2
+        exit 1
+    }
+    # Crear desde una copia temporal y publicar sólo si sigue ausente:
+    # ln falla si otra operación creó config.h mientras tanto.
+    temporary=$(mktemp "$directory/.config.h.XXXXXXXX")
+    trap 'rm -f "$temporary"' EXIT HUP INT TERM
+    cp "$template" "$temporary"
+    chmod 644 "$temporary"
+    if ln "$temporary" "$target" 2>/dev/null; then
+        echo "config.h editable creado desde config.def.h: $target"
+    else
+        echo "Aviso: config.h apareció durante la operación; se conserva sin sobrescribir." >&2
+        [ -f "$target" ] && [ ! -L "$target" ] || exit 1
+    fi
+)
