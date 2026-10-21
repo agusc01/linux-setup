@@ -30,6 +30,8 @@ sh install.sh --verify
 
 Al finalizar una instalación exitosa, `linux-setup` mantiene un inventario acumulativo en `~/.local/state/linux-setup/installed-modules` (o bajo `XDG_STATE_HOME` cuando está configurado). Se guarda **solo después de instalar**, no durante `--dry-run` ni si algún módulo falla. No se incluye un componente simplemente por estar disponible en el sistema.
 
+La verificación de dwm, st y slock consulta tanto `PATH` como `/usr/local/bin`, donde el instalador compila los binarios, aunque Alpine no incluya esa ruta en la shell que ejecuta la comprobación. No ejecuta el escritorio ni exige cambiar el `PATH` para dar un resultado correcto.
+
 La verificación es de **solo lectura** y muestra `OK`, `WARN` o `FAIL` por cada módulo del inventario: presencia de Fish y PATH, funciones de rotación, herramientas de audio, Wi-Fi, Bluetooth, brillo, Rofi, dshortcuts, dwm, st, slock y linux-doctor. La disponibilidad de herramientas no implica que el hardware esté operativo; las verificaciones funcionales de audio, Wi-Fi y Bluetooth corresponden a diagnósticos complementarios. Si está instalado `linux-doctor`, se agrega su resumen sin duplicar sus resultados como fallos del inventario.
 
 Si una instalación anterior no tiene registro, se informa y se solicita reinstalar los módulos deseados para crearlo; **no se inventa un historial**. Al terminar la instalación se ejecuta una verificación automática, y sus errores se muestran como advertencia de revisión sin ocultar los módulos correctamente instalados.

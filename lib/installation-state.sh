@@ -58,6 +58,12 @@ result() {
     esac
 }
 has() { command -v "$1" >/dev/null 2>&1; }
+# Los forks se instalan en /usr/local/bin, ruta que puede no figurar en
+# el PATH de una shell ash de Alpine o de la terminal que ejecuta --verify.
+suckless_bin_dir=${LINUX_SETUP_SUCKLESS_BIN_DIR:-/usr/local/bin}
+suckless_installed() {
+    has "$1" || { [ -f "$suckless_bin_dir/$1" ] && [ -x "$suckless_bin_dir/$1" ]; }
+}
 verify_one() {
     name=$1
     case "$name" in
@@ -90,12 +96,21 @@ verify_one() {
             if has dshortcuts; then result OK dshortcuts 'Lanzador disponible'
             else result FAIL dshortcuts 'No se encontró dshortcuts'; fi ;;
         dwm)
-            if has dwm && has startx && [ -f "$HOME/.xinitrc" ]; then
+            if ! suckless_installed dwm; then
+                result FAIL dwm 'No se encontró dwm en PATH ni en /usr/local/bin'
+            elif ! has startx; then
+                result FAIL dwm 'Falta startx (xinit)'
+            elif [ ! -f "$HOME/.xinitrc" ]; then
+                result FAIL dwm 'Falta ~/.xinitrc'
+            else
                 result OK dwm 'dwm, startx y .xinitrc presentes; inicio no probado'
-            else result FAIL dwm 'Falta dwm, startx o .xinitrc'; fi ;;
+            fi ;;
         st|slock)
-            if has "$name"; then result OK "$name" 'Ejecutable disponible'
-            else result FAIL "$name" 'Ejecutable no encontrado'; fi ;;
+            if suckless_installed "$name"; then
+                result OK "$name" 'Ejecutable disponible'
+            else
+                result FAIL "$name" 'Ejecutable no encontrado en PATH ni en /usr/local/bin'
+            fi ;;
         doctor)
             if [ -x "$HOME/.local/bin/linux-doctor" ]; then
                 result OK doctor 'Ejecutable disponible'
