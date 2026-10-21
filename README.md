@@ -34,6 +34,19 @@ sh lib/suckless-setup.sh --modules dwm --reinstall
 
 El instalador compila una copia de la fuente editable y respalda el ejecutable anterior antes de reemplazarlo. No sobrescribe el árbol de código. Para `dshortcuts`, su instalación normal usa la copia persistente y conserva `config.h` e `items.h`. Los modos `--dry-run` y `--build-only` no modifican fuentes persistentes.
 
+## Auditoría de atajos del fork dwm
+
+El fork `agusc01/dwm` utiliza `keys.h` y `launchers.h` como fuente de verdad. Para revisar **sin ejecutar ningún atajo** qué comandos externos están disponibles en el entorno Fish actual:
+
+```sh
+sh lib/dwm-shortcuts-check.sh
+sh install.sh --verify
+```
+
+El auditor lee los comandos `SHCMD("...")` y el lanzador Rofi declarado, comprueba las funciones Fish y ejecutables disponibles **sin invocarlos**, y propone equivalencias orientativas con `lt-rofi`, `lt-volume` y `lt-brightness`. No instala comandos faltantes ni modifica `keys.h`, `config.h`, `.xinitrc` o el ejecutable dwm. `--verify` muestra una advertencia específica `dwm-atajos` si encuentra comandos ausentes; el listado detallado se obtiene con el primer comando. Este chequeo es de **dependencias declaradas**, no garantiza que cada atajo funcione durante una sesión X11 ni que las acciones internas de dwm correspondan al binario instalado.
+
+Los nombres de los comandos antiguos pueden continuar presentes en tu fork, por ejemplo `rofi_menu`, `rofi_launcher`, `s0`, `b1` o `fsignal`. Su reemplazo es una decisión explícita, no automática, para conservar el comportamiento de tu configuración personalizada.
+
 ## Verificación de fuentes editables
 
 `sh install.sh --verify` comprueba los ejecutables y, de forma **independiente**, las fuentes de cada módulo `dwm`, `st`, `slock` o `dshortcuts` registrado en el inventario. Se revisan las carpetas de `~/.local/src/` (o `LINUX_SETUP_SOURCE_DIR`), el `Makefile`, el archivo `.c` principal, los `config.h` aplicables y `items.h` para dshortcuts.
