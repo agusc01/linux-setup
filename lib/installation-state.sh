@@ -64,6 +64,50 @@ suckless_bin_dir=${LINUX_SETUP_SUCKLESS_BIN_DIR:-/usr/local/bin}
 suckless_installed() {
     has "$1" || { [ -f "$suckless_bin_dir/$1" ] && [ -x "$suckless_bin_dir/$1" ]; }
 }
+# Comprobar fuentes sin ejecutar make ni alterar archivos o configuraciones.
+# La ausencia es WARN: instalaciones anteriores al guardado persistente siguen
+# teniendo binarios válidos. Una carpeta presente pero insegura/incompleta es FAIL.
+source_root=${LINUX_SETUP_SOURCE_DIR:-"$HOME/.local/src"}
+verify_source() {
+    name=$1
+    directory="$source_root/$name"
+    if [ -L "$source_root" ] || [ -L "$directory" ]; then
+        result FAIL "$name-fuente" "Ruta enlazada: $directory"
+        return
+    fi
+    if [ ! -e "$directory" ]; then
+        result WARN "$name-fuente" "Fuente no recuperada: $directory (usá --save-sources)"
+        return
+    fi
+    if [ ! -d "$directory" ]; then
+        result FAIL "$name-fuente" "La ruta no es un directorio: $directory"
+        return
+    fi
+    case "$name" in
+        dwm) source_file=dwm.c ;;
+        st) source_file=st.c ;;
+        slock) source_file=slock.c ;;
+        dshortcuts) source_file=dshortcuts.c ;;
+    esac
+    if [ ! -f "$directory/Makefile" ] || [ -L "$directory/Makefile" ] ||
+       [ ! -f "$directory/$source_file" ] || [ -L "$directory/$source_file" ]; then
+        result FAIL "$name-fuente" "Falta Makefile o $source_file, o hay enlaces"
+        return
+    fi
+    if [ "$name" = slock ]; then
+        result OK "$name-fuente" "Fuentes presentes: $directory"
+        return
+    fi
+    if [ -L "$directory/config.h" ]; then
+        result FAIL "$name-fuente" "config.h es un enlace: $directory/config.h"
+    elif [ ! -f "$directory/config.h" ]; then
+        result WARN "$name-fuente" "Falta config.h editable: $directory"
+    elif [ "$name" = dshortcuts ] && { [ ! -f "$directory/items.h" ] || [ -L "$directory/items.h" ]; }; then
+        result FAIL "$name-fuente" "Falta items.h regular en $directory"
+    else
+        result OK "$name-fuente" "Código y configuración disponibles: $directory"
+    fi
+}
 verify_one() {
     name=$1
     case "$name" in
@@ -135,6 +179,7 @@ verify() {
         case " $selected " in *" $name "*) continue ;; esac
         selected="$selected $name"
         verify_one "$name"
+        case "$name" in dwm|st|slock|dshortcuts) verify_source "$name" ;; esac
     done < "$state"
     [ -n "$selected" ] || result WARN inventario 'El registro está vacío'
     if [ -x "$HOME/.local/bin/linux-doctor" ] && [ -f "$state" ]; then
