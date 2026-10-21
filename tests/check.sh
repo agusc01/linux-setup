@@ -24,11 +24,14 @@ grep -Fq 'dshortcuts_as_root adduser "$current_user" "$group"' "$root/lib/xorg-s
 sh -n "$root/lib/module-selector.sh"
 sh -n "$root/lib/linux-doctor-setup.sh"
 sh -n "$root/tests/module-selector.sh"
+sh -n "$root/lib/installation-state.sh"
+sh -n "$root/tests/installation-state.sh"
 echo "      [OK] Sintaxis POSIX de instaladores y pruebas."
 echo
 stage="Selector de módulos"
 printf "%s\n" "[2/5] Probando selectores (entradas simuladas)..." 
 sh "$root/tests/module-selector.sh"
+sh "$root/tests/installation-state.sh"
 echo
 stage="Integraciones y dependencias"
 printf "%s\n" "[3/5] Revisando integraciones y dependencias..." 
@@ -43,6 +46,10 @@ test -f "$root/profiles/dshortcuts/config.h"
 test -f "$root/profiles/dshortcuts/items.h"
 if grep -Fq '.bash_scripts/' "$root/profiles/dshortcuts/items.h"; then
     echo 'FALLO: menú nuevo depende de Bash.' >&2; exit 1
+fi
+# --verify no debe iniciar el selector ni exigir paquetes instalados.
+if sh "$root/install.sh" --verify --modules dwm >/dev/null 2>&1; then
+    echo 'FALLO: --verify aceptó opciones incompatibles.' >&2; exit 1
 fi
 sh -n "$root/tests/check.sh"
 tmp=$(mktemp -d)
