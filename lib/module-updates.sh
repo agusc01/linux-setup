@@ -8,7 +8,9 @@ state="${XDG_STATE_HOME:-$HOME/.local/state}/linux-setup/installed-modules"
 tools_dir=${LINUX_SETUP_TOOLS_DIR:-"$HOME/.local/share/linux-setup/linux-tools"}
 : "${LINUX_SETUP_ASSUME_YES:=0}"
 known='fish rotate audio brightness wifi bluetooth rofi dshortcuts dwm st slock doctor'
-[ "$(id -u)" -ne 0 ] || { echo 'Ejecutá como usuario normal.' >&2; exit 1; }
+if [ "$mode" = update ] && [ "$(id -u)" -eq 0 ]; then
+    echo 'Ejecutá actualizaciones como usuario normal.' >&2; exit 1
+fi
 command -v git >/dev/null 2>&1 || { echo 'Falta git.' >&2; exit 1; }
 installed=''
 if [ -f "$state" ] && [ ! -L "$state" ]; then
