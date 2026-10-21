@@ -37,6 +37,7 @@ if [ "$mode" = dialog ] || { [ "$mode" = auto ] && command -v dialog >/dev/null 
         wifi 'Herramientas Wi-Fi (sin desconectar redes)' off \
         bluetooth 'Bluetooth y BlueZ' off \
         rofi 'Lanzador y selector de ventanas' off \
+        aliases 'Git corto y navegación Fish' off \
         dshortcuts 'Atajos visuales y submenús' off \
         dwm 'Gestor de ventanas X11 (fork fijado)' off \
         st 'Terminal suckless con terminfo' off \
@@ -59,6 +60,7 @@ else
         ' 9) st           Terminal suckless' \
         '10) slock        Bloqueo de pantalla (setuid-root)' \
         '11) doctor       Diagnóstico del sistema' \
+        '12) aliases      Atajos Git y navegación Fish' \
         'Escribí números separados por comas, Enter para 1,2,3 o q para cancelar.' >&2
     printf 'Módulos [1,2,3]: ' >&2
     IFS= read -r numbers || exit 130
@@ -85,6 +87,7 @@ else
             9) selection="$selection st" ;;
             10) selection="$selection slock" ;;
             11) selection="$selection doctor" ;;
+            12) selection="$selection aliases" ;;
             *) echo "Número de módulo inválido: $num" >&2; exit 2 ;;
         esac
     done
@@ -96,7 +99,7 @@ fi
 normalized=''
 for tag in $selection; do
     case "$tag" in
-        rotate|audio|brightness|wifi|bluetooth|rofi|dshortcuts|dwm|st|slock|doctor) ;;
+        rotate|audio|brightness|wifi|bluetooth|rofi|aliases|dshortcuts|dwm|st|slock|doctor) ;;
         *) echo "Selección no válida: $tag" >&2; exit 2 ;;
     esac
     case " $normalized " in
@@ -108,7 +111,7 @@ selection=$normalized
 
 # Orden canónico para que install.sh no dependa del orden devuelto por dialog.
 modules=fish
-for tag in rotate audio brightness wifi bluetooth rofi dshortcuts dwm st slock doctor; do
+for tag in rotate audio brightness wifi bluetooth rofi aliases dshortcuts dwm st slock doctor; do
     case " $selection " in
         *" $tag "*) modules="$modules,$tag" ;;
     esac
