@@ -2,6 +2,36 @@
 
 Instalador de arranque para **Alpine Linux y Debian/Ubuntu**, con **Fish obligatorio** y módulos independientes de [linux-tools](https://github.com/agusc01/linux-tools).
 
+## Fuentes persistentes de dwm, st, slock y dshortcuts
+
+El instalador **conserva una copia editable** de los repositorios fuente que descarga y compila:
+
+```text
+~/.local/src/dwm/
+~/.local/src/st/
+~/.local/src/slock/
+~/.local/src/dshortcuts/
+```
+
+Los ejecutables continúan en sus rutas actuales (`/usr/local/bin/dwm`, `/usr/local/bin/st`, `/usr/local/bin/slock` y el lanzador `~/.local/bin/dshortcuts`). **Nunca se borra ni reemplaza un directorio de fuentes persistente**; si ya existe, se utiliza una copia temporal para compilar y se conserva su `config.h`, `items.h` y cualquier otro cambio.
+
+Las instalaciones anteriores a este cambio conservan los ejecutables pero no necesariamente sus fuentes. Para **recuperarlas sin recompilar ni alterar nada instalado**, desde el repositorio:
+
+```sh
+sh lib/suckless-setup.sh --modules dwm,st,slock --save-sources
+sh lib/dshortcuts-setup.sh --save-sources
+```
+
+Solo utiliza Git para obtener los commits fijados y `patch` para aplicar las integraciones correspondientes. No necesita `doas`. Las copias recuperadas reproducen el código fijado y sus parches, no extraen `config.h` de un binario existente.
+
+Luego podés editar, por ejemplo, `~/.local/src/dwm/config.h` y **recompilar expresamente** con:
+
+```sh
+sh lib/suckless-setup.sh --modules dwm --reinstall
+```
+
+El instalador compila una copia de la fuente editable y respalda el ejecutable anterior antes de reemplazarlo. No sobrescribe el árbol de código. Para `dshortcuts`, su instalación normal usa la copia persistente y conserva `config.h` e `items.h`. Los modos `--dry-run` y `--build-only` no modifican fuentes persistentes.
+
 ## Actualizaciones seguras según el inventario
 
 ```sh
