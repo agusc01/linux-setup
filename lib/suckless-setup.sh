@@ -122,6 +122,7 @@ if [ "$save_sources" -eq 1 ]; then
         existing=$(linux_setup_source_existing "$name") || exit 1
         if [ -n "$existing" ]; then
             echo "Fuente existente conservada: $existing"
+            linux_setup_source_ensure_config "$name"
             continue
         fi
         work=$(mktemp -d)
@@ -143,6 +144,7 @@ if [ "$save_sources" -eq 1 ]; then
             fi
         done
         linux_setup_source_save "$name" "$work/$name" || exit 1
+        linux_setup_source_ensure_config "$name"
         rm -rf "$work"
     done
     echo 'Fuentes conservadas. No se recompilaron ni reemplazaron ejecutables.'
@@ -276,6 +278,7 @@ fi
 # si todavía no existe una fuente persistente.
 for name in $to_install; do
     linux_setup_source_save "$name" "$work/$name" || exit 1
+    linux_setup_source_ensure_config "$name"
 done
 
 
