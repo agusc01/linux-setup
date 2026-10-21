@@ -2,6 +2,24 @@
 
 Instalador de arranque para **Alpine Linux y Debian/Ubuntu**, con **Fish obligatorio** y módulos independientes de [linux-tools](https://github.com/agusc01/linux-tools).
 
+## Actualizaciones seguras según el inventario
+
+```sh
+sh install.sh --check-updates
+sh install.sh --update --dry-run
+sh install.sh --update
+sh install.sh --verify
+```
+
+El gestor lee los módulos de `~/.local/state/linux-setup/installed-modules`. También admite `--modules doctor` para actualizar solo ese módulo. Nunca instala módulos no seleccionados, cambia el sistema durante una consulta ni desinstala componentes.
+
+- **linux-tools:** compara el commit del checkout local con `main` en GitHub. Si hay diferencias, exige que el checkout esté limpio, en `main`, con origen oficial y que el avance sea fast-forward. Respalda los archivos administrados antes de aplicar solo los módulos registrados con `--no-deps`. Si falla el instalador, restaura el checkout y los archivos existentes; por precaución, no borra archivos nuevos.
+- **linux-doctor:** compara los archivos desplegados con los publicados y reutiliza el instalador con backup y rollback ya existente.
+- **dwm, st, slock y dshortcuts:** sus forks usan commits fijados y parches comprobados. Se informa de que están fijados; **no** se sustituyen automáticamente por un HEAD arbitrario. Sus revisiones se actualizarán en una entrega posterior, tras compilar y probar cada cambio.
+- **Sin inventario:** no se infieren módulos antiguos. Volvé a instalarlos a través del selector para registrarlos antes de actualizar.
+
+Las actualizaciones de `linux-tools` son de archivos de usuario, sin nuevas dependencias ni cambios de servicios; si una versión nueva requiere otra dependencia, se prepara mediante la instalación normal. El backup es preventivo y no constituye una transacción perfecta de todo el sistema: si la actualización añadió archivos antes de fallar, se dejan para revisión manual en lugar de borrar archivos desconocidos.
+
 ## Verificar la instalación real
 
 `sh tests/check.sh` prueba el **código del instalador**; `sh install.sh --verify` revisa **los módulos que efectivamente se instalaron** en la cuenta actual:
