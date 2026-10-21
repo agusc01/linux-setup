@@ -106,7 +106,7 @@ if [ "$doctor" -eq 1 ]; then
     fi
 fi
 if [ "$mode" = check ] || [ "$mode" = dry-run ]; then
-    echo 'Simulación: actualizar linux-doctor o linux-tools según selección, sin modificar archivos.'
+    echo 'Simulación: actualizar linux-doctor o linux-tools según selección; ningún archivo modificado.'
     exit 0
 fi
 if [ "$LINUX_SETUP_ASSUME_YES" != 1 ]; then
